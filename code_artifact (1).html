@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アポロニウスの円シミュレータ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+    <header class="w-full glass-panel border-b border-slate-800 px-6 py-4 flex flex-wrap justify-between items-center z-10">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" stroke-width="2" stroke-dasharray="4 2" />
+                    <circle cx="12" cy="12" r="3" stroke-width="2" />
+                    <path stroke-linecap="round" stroke-width="2" d="M12 3v3m0 12v3M3 12h3m12 0h3" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-300 bg-clip-text text-transparent">
+                    アポロニウスの円シミュレータ
+                </h1>
+                <p class="text-xs text-slate-400">AP : BP = m : n を満たす点 P の軌跡</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 text-xs font-mono text-slate-300 mt-2 sm:mt-0">
+            <span id="badgeA" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 shadow-sm">点A = (-4, -2)</span>
+            <span id="badgeB" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 shadow-sm">点B = (2, 4)</span>
+        </div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 md:p-6 overflow-hidden">
+        
+        <!-- Controls & Information Panel (Left/Top) -->
+        <div class="lg:col-span-4 flex flex-col gap-4 order-2 lg:order-1 overflow-y-auto max-h-[calc(100vh-100px)] pr-1">
+            
+            <!-- Parameter Control Panel -->
+            <div class="glass-panel rounded-2xl p-5 shadow-xl flex flex-col gap-5">
+                <!-- Points A & B Control Section -->
+                <div class="space-y-3 pb-3 border-b border-slate-800">
+                    <h2 class="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> 定点 A, B の座標設定 (-10 〜 10)
+                    </h2>
+                    
+                    <!-- Point A Inputs -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <label for="sliderAx">A<sub>x</sub></label>
+                                <span id="valAx" class="font-mono text-amber-300 font-bold">-4</span>
+                            </div>
+                            <input type="range" id="sliderAx" min="-10" max="10" step="1" value="-4" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <label for="sliderAy">A<sub>y</sub></label>
+                                <span id="valAy" class="font-mono text-amber-300 font-bold">-2</span>
+                            </div>
+                            <input type="range" id="sliderAy" min="-10" max="10" step="1" value="-2" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
+                        </div>
+                    </div>
+
+                    <!-- Point B Inputs -->
+                    <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <label for="sliderBx">B<sub>x</sub></label>
+                                <span id="valBx" class="font-mono text-amber-300 font-bold">2</span>
+                            </div>
+                            <input type="range" id="sliderBx" min="-10" max="10" step="1" value="2" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <label for="sliderBy">B<sub>y</sub></label>
+                                <span id="valBy" class="font-mono text-amber-300 font-bold">4</span>
+                            </div>
+                            <input type="range" id="sliderBy" min="-10" max="10" step="1" value="4" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-sky-400"></span> 比率パラメータの設定 (m : n)
+                </h2>
+
+                <!-- Slider m -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <label for="sliderM" class="font-medium text-slate-300 flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> m の値
+                        </label>
+                        <span id="valM" class="font-mono text-base font-bold text-sky-400 bg-sky-950/50 px-2.5 py-0.5 rounded border border-sky-800/50">2</span>
+                    </div>
+                    <input type="range" id="sliderM" min="1" max="10" step="1" value="2" 
+                           class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-400">
+                </div>
+
+                <!-- Slider n -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <label for="sliderN" class="font-medium text-slate-300 flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> n の値
+                        </label>
+                        <span id="valN" class="font-mono text-base font-bold text-indigo-400 bg-indigo-950/50 px-2.5 py-0.5 rounded border border-indigo-800/50">1</span>
+                    </div>
+                    <input type="range" id="sliderN" min="1" max="10" step="1" value="1" 
+                           class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-400">
+                </div>
+
+                <!-- Ratio Display Box -->
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex justify-between items-center">
+                    <span class="text-xs text-slate-400">距離の比 AP : BP</span>
+                    <span id="ratioText" class="font-mono text-sm font-semibold text-amber-400">2 : 1</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <button id="btnStart" 
+                            class="py-2.5 px-4 rounded-xl font-medium text-sm bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 active:scale-95 transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        描画開始
+                    </button>
+                    <button id="btnClear" 
+                            class="py-2.5 px-4 rounded-xl font-medium text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 active:scale-95 transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        クリア
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mathematical Information & Equations Card -->
+            <div class="glass-panel rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between space-y-4">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-200 flex items-center gap-2 mb-3">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        幾何学的解析情報
+                    </h2>
+
+                    <div id="shapeTypeBadge" class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3">
+                        アポロニウスの円 (m ≠ n)
+                    </div>
+
+                    <div class="space-y-2.5 text-xs font-mono">
+                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1.5">
+                            <div class="text-slate-400 font-sans text-[11px]">図形の方程式:</div>
+                            <div id="equationText" class="text-sky-300 font-bold text-sm tracking-wide break-all">
+                                (x - 4.00)² + (y - 6.00)² = 32
+                            </div>
+                        </div>
+
+                        <div id="detailsContainer" class="grid grid-cols-2 gap-2 text-slate-300">
+                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                                <span class="text-slate-500 text-[10px] block font-sans">中心 (Xc, Yc)</span>
+                                <span id="centerText" class="text-slate-200 font-bold">(4.00, 6.00)</span>
+                            </div>
+                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 col-span-1">
+                                <span class="text-slate-500 text-[10px] block font-sans">半径 R（厳密表記）</span>
+                                <span id="radiusText" class="text-emerald-300 font-bold break-all">4√2 (＝√32) ≈ 5.66</span>
+                            </div>
+                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                                <span class="text-slate-500 text-[10px] block font-sans">内分点 Pin</span>
+                                <span id="pinText" class="text-slate-200 font-bold">(0.00, 2.00)</span>
+                            </div>
+                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                                <span class="text-slate-500 text-[10px] block font-sans">外分点 Pout</span>
+                                <span id="poutText" class="text-slate-200 font-bold">(8.00, 10.00)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Real-time Point P Info -->
+                <div class="pt-3 border-t border-slate-800/80">
+                    <div class="text-xs text-slate-400 mb-1.5 font-sans flex justify-between items-center">
+                        <span>現在点 P(x, y) の測定値</span>
+                        <span id="animStatus" class="text-[10px] text-slate-500">待機中</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5 text-center text-xs font-mono">
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-500 font-sans">P 座標</div>
+                            <div id="pCoordText" class="text-rose-400 font-semibold mt-0.5 truncate">-</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-500 font-sans">距離 AP</div>
+                            <div id="apLengthText" class="text-sky-400 font-semibold mt-0.5 truncate">-</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-500 font-sans">距離 BP</div>
+                            <div id="bpLengthText" class="text-indigo-400 font-semibold mt-0.5 truncate">-</div>
+                        </div>
+                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                            <div class="text-[10px] text-slate-500 font-sans">比 AP/BP</div>
+                            <div id="ratioCalcText" class="text-amber-400 font-semibold mt-0.5 truncate">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Canvas Rendering Area (Right/Bottom) -->
+        <div class="lg:col-span-8 glass-panel rounded-2xl overflow-hidden relative shadow-2xl flex flex-col order-1 lg:order-2 min-h-[480px]">
+            <canvas id="simCanvas" class="w-full h-full block flex-1 bg-slate-950 cursor-crosshair"></canvas>
+            
+            <!-- Floating Canvas Toolbar / Hints -->
+            <div class="absolute bottom-4 left-4 right-4 flex justify-between items-center pointer-events-none">
+                <div class="bg-slate-900/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-slate-400 font-mono shadow-lg pointer-events-auto flex items-center gap-3">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> 軌跡 P</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> 点 A, B</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> 内/外分点</span>
+                </div>
+                <button id="btnResetView" title="表示範囲のリセット" 
+                        class="pointer-events-auto p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-300 transition shadow-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let PointA = { x: -4, y: -2 };
+        let PointB = { x: 2, y: 4 };
+
+        let m = 2;
+        let n = 1;
+        let isAnimating = false;
+        let animProgress = 0;
+        let trailPoints = [];
+        let animationFrameId = null;
+
+        let originX = 0;
+        let originY = 0;
+        let scale = 25;
+
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        // DOM Element References
+        let canvas, ctx;
+        let sliderM, sliderN, valM, valN, ratioText, btnStart, btnClear, btnResetView;
+        let sliderAx, sliderAy, sliderBx, sliderBy, valAx, valAy, valBx, valBy, badgeA, badgeB;
+        let equationText, shapeTypeBadge, detailsContainer, centerText, radiusText, pinText, poutText;
+        let animStatus, pCoordText, apLengthText, bpLengthText, ratioCalcText;
+
+        // 最大公約数を求める関数
+        function gcd(a, b) {
+            a = Math.abs(Math.round(a));
+            b = Math.abs(Math.round(b));
+            while (b) {
+                let t = b;
+                b = a % b;
+                a = t;
+            }
+            return a || 1;
+        }
+
+        // 平方根の簡素化 √n = k * √u (uは平方因子を持たない)
+        function simplifySquareRoot(n) {
+            let k = 1;
+            let u = Math.round(n);
+            for (let i = 2; i * i <= u; i++) {
+                while (u % (i * i) === 0) {
+                    k *= i;
+                    u /= (i * i);
+                }
+            }
+            return { k, u };
+        }
+
+        // 整数または分数を綺麗にフォーマットするヘルパー
+        function formatFraction(num, den) {
+            if (den < 0) { num = -num; den = -den; }
+            const g = gcd(num, den);
+            const n = Math.round(num / g);
+            const d = Math.round(den / g);
+            if (d === 1) return `${n}`;
+            return `${n}/${d}`;
+        }
+
+        // 半径Rの厳密表現（√形式および分数表現）を算出する関数
+        function getExactRadiusInfo(m, n) {
+            if (m === n) return null;
+
+            const dx = PointB.x - PointA.x;
+            const dy = PointB.y - PointA.y;
+            const d2 = dx * dx + dy * dy;
+
+            if (d2 === 0) return null;
+
+            const { k, u } = simplifySquareRoot(d2);
+
+            // R = (m * n * k * √u) / |m^2 - n^2|
+            const numK = m * n * k;
+            const denom = Math.abs(m * m - n * n);
+            const g = gcd(numK, denom);
+            const a = numK / g;
+            const b = denom / g;
+
+            // R^2 = (m^2 * n^2 * d2) / (m^2 - n^2)^2
+            const r2Num = m * m * n * n * d2;
+            const r2Den = (m * m - n * n) * (m * m - n * n);
+            const g2 = gcd(r2Num, r2Den);
+            const r2N = r2Num / g2;
+            const r2D = r2Den / g2;
+
+            let radicalStr = "";
+            let sqrtTerm = (u === 1) ? "" : (a === 1 ? `√${u}` : `${a}√${u}`);
+
+            if (u === 1) {
+                radicalStr = formatFraction(a, b);
+            } else {
+                radicalStr = (b === 1) ? sqrtTerm : `${sqrtTerm}/${b}`;
+            }
+
+            let singleSqrtStr = "";
+            if (u === 1) {
+                singleSqrtStr = formatFraction(a, b);
+            } else {
+                let insideSqrt = (r2D === 1) ? `${r2N}` : `${r2N}/${r2D}`;
+                singleSqrtStr = (r2D === 1) ? `√${r2N}` : `√(${insideSqrt})`;
+            }
+
+            let exactDisplay = (u === 1) ? radicalStr : `${radicalStr} (＝${singleSqrtStr})`;
+            const r2Str = (r2D === 1) ? `${r2N}` : `${r2N}/${r2D}`;
+            const radiusVal = (a * Math.sqrt(u)) / b;
+
+            return {
+                a, b, u,
+                r2N, r2D,
+                r2Str,
+                radicalStr,
+                singleSqrtStr,
+                exactDisplay,
+                radiusVal
+            };
+        }
+
+        function calculateGeometry() {
+            if (PointA.x === PointB.x && PointA.y === PointB.y) {
+                return {
+                    isLine: true,
+                    isInvalid: true,
+                    equation: "点Aと点Bが同じ位置です"
+                };
+            }
+
+            if (m === n) {
+                // 線分ABの垂直二等分線: dx*(x - mx) + dy*(y - my) = 0
+                const dx = PointB.x - PointA.x;
+                const dy = PointB.y - PointA.y;
+                const mx = (PointA.x + PointB.x) / 2;
+                const my = (PointA.y + PointB.y) / 2;
+
+                const rhs = dx * mx + dy * my;
+
+                let eqStr = "";
+                if (dy === 0) {
+                    eqStr = `x = ${formatFraction(dx * mx, dx)}`;
+                } else if (dx === 0) {
+                    eqStr = `y = ${formatFraction(dy * my, dy)}`;
+                } else {
+                    const slope = -dx / dy;
+                    const intercept = rhs / dy;
+                    const slopeStr = (slope === 1) ? '' : (slope === -1 ? '-' : slope.toFixed(2));
+                    const sign = intercept >= 0 ? '+' : '-';
+                    eqStr = `y = ${slopeStr}x ${sign} ${Math.abs(intercept).toFixed(2)}`;
+                }
+
+                return {
+                    isLine: true,
+                    isInvalid: false,
+                    equation: `${eqStr} (線分ABの垂直二等分線)`
+                };
+            } else {
+                const m2 = m * m;
+                const n2 = n * n;
+                const denom = m2 - n2;
+
+                const xc = (m2 * PointB.x - n2 * PointA.x) / denom;
+                const yc = (m2 * PointB.y - n2 * PointA.y) / denom;
+
+                const distAB = Math.hypot(PointB.x - PointA.x, PointB.y - PointA.y);
+                const radius = (m * n * distAB) / Math.abs(denom);
+                const exactR = getExactRadiusInfo(m, n);
+
+                const pin = {
+                    x: (n * PointA.x + m * PointB.x) / (m + n),
+                    y: (n * PointA.y + m * PointB.y) / (m + n)
+                };
+
+                const pout = {
+                    x: (-n * PointA.x + m * PointB.x) / (m - n),
+                    y: (-n * PointA.y + m * PointB.y) / (m - n)
+                };
+
+                return {
+                    isLine: false,
+                    isInvalid: false,
+                    center: { x: xc, y: yc },
+                    radius: radius,
+                    exactR: exactR,
+                    pin: pin,
+                    pout: pout,
+                    equation: `(x ${xc >= 0 ? '-' : '+'} ${Math.abs(xc).toFixed(2)})² + (y ${yc >= 0 ? '-' : '+'} ${Math.abs(yc).toFixed(2)})² = ${exactR.r2Str}`
+                };
+            }
+        }
+
+        function worldToScreen(wx, wy) {
+            return {
+                x: originX + wx * scale,
+                y: originY - wy * scale
+            };
+        }
+
+        function screenToWorld(sx, sy) {
+            return {
+                x: (sx - originX) / scale,
+                y: (originY - sy) / scale
+            };
+        }
+
+        function draw() {
+            if (!canvas || !ctx) return;
+
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Coordinate Grid
+            ctx.lineWidth = 1;
+            const topLeft = screenToWorld(0, 0);
+            const bottomRight = screenToWorld(width, height);
+
+            const minX = Math.floor(topLeft.x);
+            const maxX = Math.ceil(bottomRight.x);
+            const minY = Math.floor(bottomRight.y);
+            const maxY = Math.ceil(topLeft.y);
+
+            // Grid lines
+            ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
+            ctx.beginPath();
+            for (let x = minX; x <= maxX; x++) {
+                const sp = worldToScreen(x, 0);
+                ctx.moveTo(sp.x, 0);
+                ctx.lineTo(sp.x, height);
+            }
+            for (let y = minY; y <= maxY; y++) {
+                const sp = worldToScreen(0, y);
+                ctx.moveTo(0, sp.y);
+                ctx.lineTo(width, sp.y);
+            }
+            ctx.stroke();
+
+            // Axes
+            const originScreen = worldToScreen(0, 0);
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            // X-axis
+            ctx.moveTo(0, originScreen.y);
+            ctx.lineTo(width, originScreen.y);
+            // Y-axis
+            ctx.moveTo(originScreen.x, 0);
+            ctx.lineTo(originScreen.x, height);
+            ctx.stroke();
+
+            // Axis numbers/labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = '10px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+
+            for (let x = minX; x <= maxX; x++) {
+                if (x === 0) continue;
+                const sp = worldToScreen(x, 0);
+                if (sp.x > 0 && sp.x < width) {
+                    ctx.fillText(x, sp.x, Math.min(Math.max(originScreen.y + 4, 4), height - 16));
+                }
+            }
+
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let y = minY; y <= maxY; y++) {
+                if (y === 0) continue;
+                const sp = worldToScreen(0, y);
+                if (sp.y > 0 && sp.y < height) {
+                    ctx.fillText(y, Math.min(Math.max(originScreen.x - 6, 20), width - 4), sp.y);
+                }
+            }
+
+            const geo = calculateGeometry();
+
+            // Draw full background shape (dashed)
+            if (!geo.isInvalid) {
+                if (!geo.isLine) {
+                    const centerScr = worldToScreen(geo.center.x, geo.center.y);
+                    const rScr = geo.radius * scale;
+
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.arc(centerScr.x, centerScr.y, rScr, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Center point C
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.arc(centerScr.x, centerScr.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Pin and Pout
+                    const pinScr = worldToScreen(geo.pin.x, geo.pin.y);
+                    const poutScr = worldToScreen(geo.pout.x, geo.pout.y);
+
+                    drawLabeledPoint(pinScr, 'Pin', '#34d399', 4);
+                    drawLabeledPoint(poutScr, 'Pout', '#34d399', 4);
+                } else {
+                    // Perpendicular bisector background line
+                    const dx = PointB.x - PointA.x;
+                    const dy = PointB.y - PointA.y;
+                    const mx = (PointA.x + PointB.x) / 2;
+                    const my = (PointA.y + PointB.y) / 2;
+
+                    let vx = -dy;
+                    let vy = dx;
+                    const len = Math.hypot(vx, vy);
+                    if (len > 0) { vx /= len; vy /= len; }
+
+                    const maxCoord = Math.max(Math.abs(topLeft.x), Math.abs(bottomRight.x), Math.abs(topLeft.y), Math.abs(bottomRight.y)) + 20;
+                    const p1 = worldToScreen(mx + vx * maxCoord, my + vy * maxCoord);
+                    const p2 = worldToScreen(mx - vx * maxCoord, my - vy * maxCoord);
+
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // Animated Trail
+            if (trailPoints.length > 1) {
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+
+                const startP = worldToScreen(trailPoints[0].x, trailPoints[0].y);
+                ctx.moveTo(startP.x, startP.y);
+
+                for (let i = 1; i < trailPoints.length; i++) {
+                    const pt = worldToScreen(trailPoints[i].x, trailPoints[i].y);
+                    ctx.lineTo(pt.x, pt.y);
+                }
+                ctx.stroke();
+            }
+
+            const scrA = worldToScreen(PointA.x, PointA.y);
+            const scrB = worldToScreen(PointB.x, PointB.y);
+
+            // Dynamic Lines PA & PB
+            if (trailPoints.length > 0) {
+                const currentP = trailPoints[trailPoints.length - 1];
+                const scrP = worldToScreen(currentP.x, currentP.y);
+
+                // Line PA
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(scrA.x, scrA.y);
+                ctx.lineTo(scrP.x, scrP.y);
+                ctx.stroke();
+
+                // Line PB
+                ctx.strokeStyle = 'rgba(129, 140, 248, 0.8)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(scrB.x, scrB.y);
+                ctx.lineTo(scrP.x, scrP.y);
+                ctx.stroke();
+
+                // Point P
+                ctx.fillStyle = '#f43f5e';
+                ctx.shadowColor = 'rgba(244, 63, 94, 0.6)';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(scrP.x, scrP.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Point P Label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Inter';
+                ctx.textAlign = 'left';
+                ctx.fillText(`P (${currentP.x.toFixed(2)}, ${currentP.y.toFixed(2)})`, scrP.x + 10, scrP.y - 10);
+            }
+
+            // Fixed Points A and B
+            drawLabeledPoint(scrA, `A (${PointA.x}, ${PointA.y})`, '#f59e0b', 6);
+            drawLabeledPoint(scrB, `B (${PointB.x}, ${PointB.y})`, '#f59e0b', 6);
+        }
+
+        function drawLabeledPoint(pos, label, color, r = 5) {
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#f1f5f9';
+            ctx.font = '500 11px JetBrains Mono';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, pos.x + 8, pos.y + 12);
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            if (originX === 0 && originY === 0) {
+                resetView();
+            } else {
+                draw();
+            }
+        }
+
+        function resetView() {
+            if (!canvas) return;
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+
+            const geo = calculateGeometry();
+
+            let minX = Math.min(PointA.x, PointB.x);
+            let maxX = Math.max(PointA.x, PointB.x);
+            let minY = Math.min(PointA.y, PointB.y);
+            let maxY = Math.max(PointA.y, PointB.y);
+
+            if (!geo.isInvalid && !geo.isLine) {
+                minX = Math.min(minX, geo.center.x - geo.radius);
+                maxX = Math.max(maxX, geo.center.x + geo.radius);
+                minY = Math.min(minY, geo.center.y - geo.radius);
+                maxY = Math.max(maxY, geo.center.y + geo.radius);
+            }
+
+            const rangeX = (maxX - minX) || 10;
+            const rangeY = (maxY - minY) || 10;
+            const padding = 3.5;
+
+            const scaleX = width / (rangeX + padding * 2);
+            const scaleY = height / (rangeY + padding * 2);
+            scale = Math.min(scaleX, scaleY, 40);
+
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+
+            originX = width / 2 - centerX * scale;
+            originY = height / 2 + centerY * scale;
+
+            draw();
+        }
+
+        function getPointAtProgress(progress) {
+            const geo = calculateGeometry();
+
+            if (!geo.isLine) {
+                // m ≠ n: Apollonian Circle
+                // スタート点: 円の最右点 (Xc + R, Yc) -> 反時計回りに回転
+                const angle = progress * Math.PI * 2;
+                const x = geo.center.x + geo.radius * Math.cos(angle);
+                const y = geo.center.y + geo.radius * Math.sin(angle);
+                return { x, y };
+            } else {
+                // m = n: 垂直二等分線を画面最右点から左へ描画
+                const dx = PointB.x - PointA.x;
+                const dy = PointB.y - PointA.y;
+                const mx = (PointA.x + PointB.x) / 2;
+                const my = (PointA.y + PointB.y) / 2;
+
+                // 垂直二等分線の方向ベクトル (-dy, dx)
+                let vx = -dy;
+                let vy = dx;
+                if (vx < 0) { vx = -vx; vy = -vy; } // 右向きを保証
+
+                const len = Math.hypot(vx, vy);
+                if (len > 0) { vx /= len; vy /= len; }
+
+                const width = canvas.width / window.devicePixelRatio;
+                const height = canvas.height / window.devicePixelRatio;
+                const topLeft = screenToWorld(0, 0);
+                const bottomRight = screenToWorld(width, height);
+                const span = Math.max(Math.abs(topLeft.x), Math.abs(bottomRight.x), Math.abs(topLeft.y), Math.abs(bottomRight.y)) + 15;
+
+                const startT = span;
+                const endT = -span;
+                const currentT = startT + (endT - startT) * progress;
+
+                return { x: mx + vx * currentT, y: my + vy * currentT };
+            }
+        }
+
+        function clearTrajectory() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            isAnimating = false;
+            animProgress = 0;
+            trailPoints = [];
+
+            animStatus.textContent = "待機中";
+            animStatus.className = "text-[10px] text-slate-500";
+            pCoordText.textContent = "-";
+            apLengthText.textContent = "-";
+            bpLengthText.textContent = "-";
+            ratioCalcText.textContent = "-";
+
+            draw();
+        }
+
+        function startAnimation() {
+            clearTrajectory();
+            isAnimating = true;
+            animProgress = 0;
+            animStatus.textContent = "描画中...";
+            animStatus.className = "text-[10px] text-rose-400 font-bold animate-pulse";
+
+            function animateLoop() {
+                if (!isAnimating) return;
+
+                animProgress += 0.008;
+                if (animProgress >= 1) {
+                    animProgress = 1;
+                    isAnimating = false;
+                    animStatus.textContent = "描画完了";
+                    animStatus.className = "text-[10px] text-emerald-400 font-bold";
+                }
+
+                const pt = getPointAtProgress(animProgress);
+                trailPoints.push(pt);
+
+                // Live Point P calculations
+                const ap = Math.hypot(pt.x - PointA.x, pt.y - PointA.y);
+                const bp = Math.hypot(pt.x - PointB.x, pt.y - PointB.y);
+                const ratio = bp > 0 ? (ap / bp).toFixed(2) : "-";
+
+                pCoordText.textContent = `(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`;
+                apLengthText.textContent = ap.toFixed(2);
+                bpLengthText.textContent = bp.toFixed(2);
+                ratioCalcText.textContent = ratio;
+
+                draw();
+
+                if (isAnimating) {
+                    animationFrameId = requestAnimationFrame(animateLoop);
+                }
+            }
+
+            animateLoop();
+        }
+
+        function updateUI() {
+            m = parseInt(sliderM.value);
+            n = parseInt(sliderN.value);
+
+            PointA.x = parseInt(sliderAx.value);
+            PointA.y = parseInt(sliderAy.value);
+            PointB.x = parseInt(sliderBx.value);
+            PointB.y = parseInt(sliderBy.value);
+
+            valM.textContent = m;
+            valN.textContent = n;
+            ratioText.textContent = `${m} : ${n}`;
+
+            valAx.textContent = PointA.x;
+            valAy.textContent = PointA.y;
+            valBx.textContent = PointB.x;
+            valBy.textContent = PointB.y;
+
+            badgeA.textContent = `点A = (${PointA.x}, ${PointA.y})`;
+            badgeB.textContent = `点B = (${PointB.x}, ${PointB.y})`;
+
+            const geo = calculateGeometry();
+
+            equationText.textContent = geo.equation;
+
+            if (geo.isLine) {
+                shapeTypeBadge.textContent = geo.isInvalid ? "同一点（計算不可）" : "線分ABの垂直二等分線 (m = n)";
+                shapeTypeBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-3";
+                detailsContainer.classList.add('hidden');
+            } else {
+                shapeTypeBadge.textContent = "アポロニウスの円 (m ≠ n)";
+                shapeTypeBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3";
+                detailsContainer.classList.remove('hidden');
+
+                centerText.textContent = `(${geo.center.x.toFixed(2)}, ${geo.center.y.toFixed(2)})`;
+                radiusText.textContent = `${geo.exactR.exactDisplay} ≈ ${geo.radius.toFixed(2)}`;
+                pinText.textContent = `(${geo.pin.x.toFixed(2)}, ${geo.pin.y.toFixed(2)})`;
+                poutText.textContent = `(${geo.pout.x.toFixed(2)}, ${geo.pout.y.toFixed(2)})`;
+            }
+
+            clearTrajectory();
+        }
+
+        function initDOMReferences() {
+            canvas = document.getElementById('simCanvas');
+            ctx = canvas.getContext('2d');
+
+            sliderM = document.getElementById('sliderM');
+            sliderN = document.getElementById('sliderN');
+            valM = document.getElementById('valM');
+            valN = document.getElementById('valN');
+            ratioText = document.getElementById('ratioText');
+
+            sliderAx = document.getElementById('sliderAx');
+            sliderAy = document.getElementById('sliderAy');
+            sliderBx = document.getElementById('sliderBx');
+            sliderBy = document.getElementById('sliderBy');
+            valAx = document.getElementById('valAx');
+            valAy = document.getElementById('valAy');
+            valBx = document.getElementById('valBx');
+            valBy = document.getElementById('valBy');
+            badgeA = document.getElementById('badgeA');
+            badgeB = document.getElementById('badgeB');
+
+            btnStart = document.getElementById('btnStart');
+            btnClear = document.getElementById('btnClear');
+            btnResetView = document.getElementById('btnResetView');
+
+            equationText = document.getElementById('equationText');
+            shapeTypeBadge = document.getElementById('shapeTypeBadge');
+            detailsContainer = document.getElementById('detailsContainer');
+            centerText = document.getElementById('centerText');
+            radiusText = document.getElementById('radiusText');
+            pinText = document.getElementById('pinText');
+            poutText = document.getElementById('poutText');
+
+            animStatus = document.getElementById('animStatus');
+            pCoordText = document.getElementById('pCoordText');
+            apLengthText = document.getElementById('apLengthText');
+            bpLengthText = document.getElementById('bpLengthText');
+            ratioCalcText = document.getElementById('ratioCalcText');
+
+            // Slider listeners
+            sliderM.addEventListener('input', updateUI);
+            sliderN.addEventListener('input', updateUI);
+            sliderAx.addEventListener('input', updateUI);
+            sliderAy.addEventListener('input', updateUI);
+            sliderBx.addEventListener('input', updateUI);
+            sliderBy.addEventListener('input', updateUI);
+
+            // Button listeners
+            btnStart.addEventListener('click', startAnimation);
+            btnClear.addEventListener('click', clearTrajectory);
+            btnResetView.addEventListener('click', resetView);
+
+            // Canvas Drag & Zoom Handlers
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+
+                originX += dx;
+                originY += dy;
+                draw();
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Wheel Zoom Handler
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                originX = mouseX - (mouseX - originX) * zoomFactor;
+                originY = mouseY - (mouseY - originY) * zoomFactor;
+                scale *= zoomFactor;
+
+                draw();
+            }, { passive: false });
+
+            // Window Resize Handler
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        // Initialization Entrypoint
+        window.onload = () => {
+            initDOMReferences();
+            resizeCanvas();
+            resetView();
+            updateUI();
+        };
+
+    </script>
+</body>
+</html>
