@@ -3,963 +3,1310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アポロニウスの円シミュレータ</title>
+    <title>サッカー部 朝練参加状況・リアルタイム共有システム</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <!-- Firebase JS SDKs (v9 Compat for easy single-file Realtime DB integration) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
     <style>
-        body {
-            background-color: #0f172a;
-            color: #f8fafc;
-        }
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 18px;
-            width: 18px;
-            border-radius: 50%;
-            background: #38bdf8;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-            transition: transform 0.1s ease;
-        }
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-        canvas {
-            touch-action: none;
-        }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .tap-btn { transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tap-btn:active { transform: scale(0.95); }
+        /* Smooth custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-sky-500 selection:text-white">
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
-    <header class="w-full glass-panel border-b border-slate-800 px-6 py-4 flex flex-wrap justify-between items-center z-10">
-        <div class="flex items-center space-x-3">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9" stroke-width="2" stroke-dasharray="4 2" />
-                    <circle cx="12" cy="12" r="3" stroke-width="2" />
-                    <path stroke-linecap="round" stroke-width="2" d="M12 3v3m0 12v3M3 12h3m12 0h3" />
-                </svg>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-300 bg-clip-text text-transparent">
-                    アポロニウスの円シミュレータ
-                </h1>
-                <p class="text-xs text-slate-400">AP : BP = m : n を満たす点 P の軌跡</p>
-            </div>
-        </div>
-        <div class="flex items-center space-x-2 text-xs font-mono text-slate-300 mt-2 sm:mt-0">
-            <span id="badgeA" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 shadow-sm">点A = (-4, -2)</span>
-            <span id="badgeB" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 shadow-sm">点B = (2, 4)</span>
-        </div>
-    </header>
-
-    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 md:p-6 overflow-hidden">
-        
-        <!-- Controls & Information Panel (Left/Top) -->
-        <div class="lg:col-span-4 flex flex-col gap-4 order-2 lg:order-1 overflow-y-auto max-h-[calc(100vh-100px)] pr-1">
-            
-            <!-- Parameter Control Panel -->
-            <div class="glass-panel rounded-2xl p-5 shadow-xl flex flex-col gap-5">
-                <!-- Points A & B Control Section -->
-                <div class="space-y-3 pb-3 border-b border-slate-800">
-                    <h2 class="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-amber-400"></span> 定点 A, B の座標設定 (-10 〜 10)
-                    </h2>
-                    
-                    <!-- Point A Inputs -->
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-slate-400">
-                                <label for="sliderAx">A<sub>x</sub></label>
-                                <span id="valAx" class="font-mono text-amber-300 font-bold">-4</span>
-                            </div>
-                            <input type="range" id="sliderAx" min="-10" max="10" step="1" value="-4" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
-                        </div>
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-slate-400">
-                                <label for="sliderAy">A<sub>y</sub></label>
-                                <span id="valAy" class="font-mono text-amber-300 font-bold">-2</span>
-                            </div>
-                            <input type="range" id="sliderAy" min="-10" max="10" step="1" value="-2" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
-                        </div>
-                    </div>
-
-                    <!-- Point B Inputs -->
-                    <div class="grid grid-cols-2 gap-2 text-xs pt-1">
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-slate-400">
-                                <label for="sliderBx">B<sub>x</sub></label>
-                                <span id="valBx" class="font-mono text-amber-300 font-bold">2</span>
-                            </div>
-                            <input type="range" id="sliderBx" min="-10" max="10" step="1" value="2" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
-                        </div>
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-slate-400">
-                                <label for="sliderBy">B<sub>y</sub></label>
-                                <span id="valBy" class="font-mono text-amber-300 font-bold">4</span>
-                            </div>
-                            <input type="range" id="sliderBy" min="-10" max="10" step="1" value="4" class="w-full h-1.5 bg-slate-700 rounded appearance-none cursor-pointer accent-amber-400">
-                        </div>
-                    </div>
+    <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-emerald-800 rounded-full flex items-center justify-center border border-emerald-500 shadow-inner">
+                    <i class="fa-solid fa-futbol text-xl text-emerald-300"></i>
                 </div>
-
-                <h2 class="text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-sky-400"></span> 比率パラメータの設定 (m : n)
-                </h2>
-
-                <!-- Slider m -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center text-sm">
-                        <label for="sliderM" class="font-medium text-slate-300 flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> m の値
-                        </label>
-                        <span id="valM" class="font-mono text-base font-bold text-sky-400 bg-sky-950/50 px-2.5 py-0.5 rounded border border-sky-800/50">2</span>
-                    </div>
-                    <input type="range" id="sliderM" min="1" max="10" step="1" value="2" 
-                           class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-400">
-                </div>
-
-                <!-- Slider n -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center text-sm">
-                        <label for="sliderN" class="font-medium text-slate-300 flex items-center gap-1.5">
-                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> n の値
-                        </label>
-                        <span id="valN" class="font-mono text-base font-bold text-indigo-400 bg-indigo-950/50 px-2.5 py-0.5 rounded border border-indigo-800/50">1</span>
-                    </div>
-                    <input type="range" id="sliderN" min="1" max="10" step="1" value="1" 
-                           class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-400">
-                </div>
-
-                <!-- Ratio Display Box -->
-                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex justify-between items-center">
-                    <span class="text-xs text-slate-400">距離の比 AP : BP</span>
-                    <span id="ratioText" class="font-mono text-sm font-semibold text-amber-400">2 : 1</span>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="grid grid-cols-2 gap-3 pt-1">
-                    <button id="btnStart" 
-                            class="py-2.5 px-4 rounded-xl font-medium text-sm bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-lg shadow-sky-500/25 active:scale-95 transition flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        描画開始
-                    </button>
-                    <button id="btnClear" 
-                            class="py-2.5 px-4 rounded-xl font-medium text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 active:scale-95 transition flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        クリア
-                    </button>
-                </div>
-            </div>
-
-            <!-- Mathematical Information & Equations Card -->
-            <div class="glass-panel rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                    <h2 class="text-base font-semibold text-slate-200 flex items-center gap-2 mb-3">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                        幾何学的解析情報
-                    </h2>
-
-                    <div id="shapeTypeBadge" class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3">
-                        アポロニウスの円 (m ≠ n)
-                    </div>
-
-                    <div class="space-y-2.5 text-xs font-mono">
-                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-1.5">
-                            <div class="text-slate-400 font-sans text-[11px]">図形の方程式:</div>
-                            <div id="equationText" class="text-sky-300 font-bold text-sm tracking-wide break-all">
-                                (x - 4.00)² + (y - 6.00)² = 32
-                            </div>
-                        </div>
-
-                        <div id="detailsContainer" class="grid grid-cols-2 gap-2 text-slate-300">
-                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
-                                <span class="text-slate-500 text-[10px] block font-sans">中心 (Xc, Yc)</span>
-                                <span id="centerText" class="text-slate-200 font-bold">(4.00, 6.00)</span>
-                            </div>
-                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 col-span-1">
-                                <span class="text-slate-500 text-[10px] block font-sans">半径 R（厳密表記）</span>
-                                <span id="radiusText" class="text-emerald-300 font-bold break-all">4√2 (＝√32) ≈ 5.66</span>
-                            </div>
-                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
-                                <span class="text-slate-500 text-[10px] block font-sans">内分点 Pin</span>
-                                <span id="pinText" class="text-slate-200 font-bold">(0.00, 2.00)</span>
-                            </div>
-                            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
-                                <span class="text-slate-500 text-[10px] block font-sans">外分点 Pout</span>
-                                <span id="poutText" class="text-slate-200 font-bold">(8.00, 10.00)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dynamic Real-time Point P Info -->
-                <div class="pt-3 border-t border-slate-800/80">
-                    <div class="text-xs text-slate-400 mb-1.5 font-sans flex justify-between items-center">
-                        <span>現在点 P(x, y) の測定値</span>
-                        <span id="animStatus" class="text-[10px] text-slate-500">待機中</span>
-                    </div>
-                    <div class="grid grid-cols-4 gap-1.5 text-center text-xs font-mono">
-                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-500 font-sans">P 座標</div>
-                            <div id="pCoordText" class="text-rose-400 font-semibold mt-0.5 truncate">-</div>
-                        </div>
-                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-500 font-sans">距離 AP</div>
-                            <div id="apLengthText" class="text-sky-400 font-semibold mt-0.5 truncate">-</div>
-                        </div>
-                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-500 font-sans">距離 BP</div>
-                            <div id="bpLengthText" class="text-indigo-400 font-semibold mt-0.5 truncate">-</div>
-                        </div>
-                        <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                            <div class="text-[10px] text-slate-500 font-sans">比 AP/BP</div>
-                            <div id="ratioCalcText" class="text-amber-400 font-semibold mt-0.5 truncate">-</div>
-                        </div>
-                    </div>
+                    <h1 class="font-bold text-base sm:text-lg leading-tight flex items-center gap-2">
+                        サッカー部 朝練管理
+                        <span id="sync-status-badge" class="text-[10px] bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/50 flex items-center gap-1 font-normal">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block"></span>
+                            <span id="sync-status-text">ローカル動作中</span>
+                        </span>
+                    </h1>
+                    <p class="text-xs text-emerald-200">出欠集計・自主練・リアルタイム共有</p>
                 </div>
             </div>
 
-        </div>
-
-        <!-- Canvas Rendering Area (Right/Bottom) -->
-        <div class="lg:col-span-8 glass-panel rounded-2xl overflow-hidden relative shadow-2xl flex flex-col order-1 lg:order-2 min-h-[480px]">
-            <canvas id="simCanvas" class="w-full h-full block flex-1 bg-slate-950 cursor-crosshair"></canvas>
-            
-            <!-- Floating Canvas Toolbar / Hints -->
-            <div class="absolute bottom-4 left-4 right-4 flex justify-between items-center pointer-events-none">
-                <div class="bg-slate-900/80 backdrop-blur border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-slate-400 font-mono shadow-lg pointer-events-auto flex items-center gap-3">
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> 軌跡 P</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> 点 A, B</span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> 内/外分点</span>
-                </div>
-                <button id="btnResetView" title="表示範囲のリセット" 
-                        class="pointer-events-auto p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-300 transition shadow-lg">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            <!-- Month Selector Pill in Header -->
+            <div class="flex items-center bg-emerald-900/60 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-emerald-500/40 shadow-inner">
+                <i class="fa-regular fa-calendar-days text-emerald-300 mr-2 text-xs"></i>
+                <select id="global-month-select" class="bg-transparent text-white font-bold text-xs sm:text-sm focus:outline-none cursor-pointer" onchange="handleMonthChange(this.value)">
+                    <!-- Dynamic Month Options -->
+                </select>
+                <button onclick="promptAddNewMonth()" class="ml-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded px-2 py-1 font-bold shadow tap-btn" title="新しい対象月を追加">
+                    <i class="fa-solid fa-plus mr-0.5"></i>追加
                 </button>
             </div>
         </div>
 
+        <!-- Navigation Tabs -->
+        <nav class="max-w-4xl mx-auto px-2 flex border-t border-emerald-600/40 bg-emerald-800/90 text-xs sm:text-sm font-semibold">
+            <button id="tab-btn-student" onclick="switchTab('student')" class="flex-1 py-3 text-center transition border-b-2 border-amber-400 text-amber-300 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-pen-to-square"></i>部員用 入力
+            </button>
+            <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="flex-1 py-3 text-center transition border-b-2 border-transparent text-emerald-100 hover:text-white flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-chart-pie"></i>集計・確認
+            </button>
+            <button id="tab-btn-admin" onclick="switchTab('admin')" class="flex-1 py-3 text-center transition border-b-2 border-transparent text-emerald-100 hover:text-white flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-user-shield"></i>顧問用 設定
+            </button>
+        </nav>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 mt-4">
+
+        <!-- Toast Notification Container -->
+        <div id="toast-message" class="hidden fixed bottom-6 right-6 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-opacity duration-300 border border-slate-700 backdrop-blur-md">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-text" class="text-xs sm:text-sm font-medium">更新しました</span>
+        </div>
+
+        <!-- Urgent Emergency Change Banner (Active 20:00 previous day to morning practice start) -->
+        <div id="emergency-banner" class="hidden mb-4 bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 text-white p-4 rounded-2xl shadow-lg border-2 border-red-400 animate-pulse">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start space-x-3">
+                    <div class="p-2 bg-white/20 rounded-xl text-xl shrink-0">🚨</div>
+                    <div>
+                        <h2 class="font-extrabold text-sm sm:text-base">【直前連絡】本日の朝練 予定変更・急遽不参加</h2>
+                        <p class="text-xs text-red-100">前日20:00〜朝練開始前までの緊急手続きです。理由の入力が必須となります。</p>
+                    </div>
+                </div>
+                <button onclick="openEmergencyModal()" class="bg-white text-red-700 font-extrabold px-4 py-2 rounded-xl text-xs shadow-md hover:bg-red-50 tap-btn shrink-0 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>今すぐ緊急連絡送信</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SECTION 1: STUDENT VIEW (部員用入力画面) -->
+        <section id="view-student" class="space-y-4">
+            <!-- Student Header Selection & Fast-Register Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                            <i class="fa-solid fa-user-tag text-emerald-600 mr-1"></i>部員名を選択 (または新規登録)
+                        </label>
+                        <div class="flex gap-2">
+                            <select id="student-name-select" onchange="onStudentSelectChange()" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm shadow-inner">
+                                <option value="">-- 名前を選択してください --</option>
+                            </select>
+                            <button onclick="promptRegisterStudent()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center shrink-0 tap-btn shadow-sm">
+                                <i class="fa-solid fa-user-plus mr-1.5"></i>新規登録
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-xs text-slate-600 flex flex-wrap sm:flex-col justify-around gap-y-1">
+                        <div><span class="text-slate-500">対象年月:</span> <span id="student-view-month" class="font-extrabold text-emerald-700 ml-1">----年--月</span></div>
+                        <div><span class="text-slate-500">基本場所:</span> <span id="student-default-place" class="font-bold text-slate-800 ml-1">グラウンド</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fast Bulk Action Helper Bar -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                <span class="text-xs font-bold text-slate-700 flex items-center">
+                    <i class="fa-solid fa-bolt text-amber-500 mr-1.5 text-sm"></i>一括入力ヘルパー (ワンタップ選択):
+                </span>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button onclick="applyBulkAnswer('O')" class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl border border-emerald-300 tap-btn flex items-center justify-center gap-1">
+                        <span>全日 〇 (参加)</span>
+                    </button>
+                    <button onclick="applyBulkAnswer('O_WEEKDAY')" class="flex-1 sm:flex-none bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold px-3 py-2 rounded-xl border border-blue-300 tap-btn flex items-center justify-center gap-1">
+                        <span>平日のみ 〇</span>
+                    </button>
+                    <button onclick="applyBulkAnswer('X')" class="flex-1 sm:flex-none bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold px-3 py-2 rounded-xl border border-rose-300 tap-btn flex items-center justify-center gap-1">
+                        <span>全日 ✕ (不参加)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Schedule Cards Container -->
+            <div id="student-schedule-list" class="space-y-3">
+                <!-- Dynamically generated day cards with large touch pill buttons -->
+            </div>
+
+            <!-- Sticky Submit / Save Floating Button -->
+            <div class="sticky bottom-4 pt-2">
+                <button onclick="saveStudentSchedule()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-xl border border-emerald-500 text-sm sm:text-base flex items-center justify-center space-x-2 tap-btn">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                    <span>回答をクラウドに送信・保存する</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DASHBOARD VIEW (集計・確認画面) -->
+        <section id="view-dashboard" class="hidden space-y-4">
+            <!-- Header Summary & CSV Export -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-emerald-600"></i>
+                            <span id="dashboard-month-title">----年--月</span> 朝練参加出欠マトリクス
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">全部員のリアルタイム回答状況と日別参加人数の集計結果</p>
+                    </div>
+                    <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 shadow-sm tap-btn">
+                        <i class="fa-solid fa-file-csv text-emerald-400 text-sm"></i>
+                        <span>CSVダウンロード (BOM付)</span>
+                    </button>
+                </div>
+
+                <!-- Statistics Summary Counter Badges -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4 pt-3 border-t border-slate-100">
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-center">
+                        <span class="block text-[11px] font-semibold text-slate-500">登録部員数</span>
+                        <span id="stat-total-students" class="text-lg font-black text-slate-800">0名</span>
+                    </div>
+                    <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-center">
+                        <span class="block text-[11px] font-semibold text-emerald-700">本日の参加予定 (〇)</span>
+                        <span id="stat-today-o" class="text-lg font-black text-emerald-700">0名</span>
+                    </div>
+                    <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-center">
+                        <span class="block text-[11px] font-semibold text-amber-700">本日の未定 (△)</span>
+                        <span id="stat-today-triangle" class="text-lg font-black text-amber-700">0名</span>
+                    </div>
+                    <div class="bg-rose-50 p-2.5 rounded-xl border border-rose-200 text-center">
+                        <span class="block text-[11px] font-semibold text-rose-700">直前緊急連絡ログ</span>
+                        <span id="stat-emergency-count" class="text-lg font-black text-rose-700">0件</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Grid Matrix Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table id="matrix-table" class="w-full text-xs text-left border-collapse min-w-[650px]">
+                        <!-- Dynamic Header and Rows Injected Here -->
+                    </table>
+                </div>
+            </div>
+
+            <!-- Emergency Direct Change Logs View -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                <h3 class="font-extrabold text-sm text-slate-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i>
+                    直前緊急連絡・理由変更履歴 (最新順)
+                </h3>
+                <div id="emergency-logs-container" class="space-y-2 max-h-60 overflow-y-auto text-xs pr-1">
+                    <p class="text-slate-400 text-center py-4">直前緊急連絡の記録はありません。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: ADVISOR VIEW (顧問用設定画面 - PIN Protected) -->
+        <section id="view-admin" class="hidden space-y-4">
+            <!-- PIN Code Password Protection Card -->
+            <div id="admin-pin-card" class="bg-white rounded-2xl shadow-md border border-slate-200 p-6 max-w-md mx-auto my-8">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 class="text-lg font-extrabold text-slate-800">顧問用設定画面 (PIN認証)</h2>
+                    <p class="text-xs text-slate-500 mt-1">管理設定を行うには暗証番号を入力してください</p>
+                </div>
+
+                <form onsubmit="handlePinSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">暗証番号 (PIN)</label>
+                        <!-- SECURITY MASK: Password mask type, NO hint/watermark numbers in placeholder -->
+                        <input type="password" id="admin-pin-input" placeholder="PINコードを入力" maxlength="10" required class="w-full text-center text-lg tracking-widest bg-slate-50 border border-slate-300 rounded-xl py-3 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner">
+                    </div>
+                    <p id="pin-error-msg" class="text-xs text-rose-600 text-center hidden font-bold">PINコードが正しくありません</p>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition tap-btn shadow-sm">
+                        認証して解除
+                    </button>
+                </form>
+            </div>
+
+            <!-- Unlocked Advisor Panel Content -->
+            <div id="admin-panel-content" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl">
+                    <span class="text-xs font-bold text-emerald-900 flex items-center">
+                        <i class="fa-solid fa-user-check text-emerald-600 mr-2 text-sm"></i>顧問管理者として認証中
+                    </span>
+                    <button onclick="lockAdminPanel()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-bold tap-btn">
+                        パネルをロック
+                    </button>
+                </div>
+
+                <!-- 1. Registered Student Member Management & Deletion -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-extrabold text-sm text-slate-800 flex items-center">
+                            <i class="fa-solid fa-users text-emerald-600 mr-2"></i>登録部員一覧・管理 (部員削除)
+                        </h3>
+                        <button onclick="promptRegisterStudent()" class="text-xs bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-2.5 py-1 rounded-lg font-bold tap-btn border border-emerald-200">
+                            + 部員を手動追加
+                        </button>
+                    </div>
+                    <div id="admin-student-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+                        <!-- Dynamic Student Pills with Delete icons -->
+                    </div>
+                </div>
+
+                <!-- 2. Monthly Schedule Batch Configurations -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+                    <h3 class="font-extrabold text-sm text-slate-800 flex items-center border-b border-slate-100 pb-2.5">
+                        <i class="fa-solid fa-sliders text-emerald-600 mr-2"></i>
+                        <span id="admin-month-title">----年--月</span> の一括練習設定
+                    </h3>
+
+                    <!-- Bulk Time Configuration -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                        <label class="block text-xs font-bold text-slate-700">一括時間設定 (月内の全練習日に時間一括変更)</label>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <input type="time" id="batch-start-time" value="07:00" class="bg-white border border-slate-300 text-xs rounded-lg px-2.5 py-2 font-mono focus:ring-2 focus:ring-emerald-500">
+                            <span class="text-xs text-slate-500 font-bold">〜</span>
+                            <input type="time" id="batch-end-time" value="08:00" class="bg-white border border-slate-300 text-xs rounded-lg px-2.5 py-2 font-mono focus:ring-2 focus:ring-emerald-500">
+                            <button onclick="applyBatchTimes()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold tap-btn shadow-sm">
+                                全日に一括適用
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Day-of-Week OFF Configuration -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2">
+                        <label class="block text-xs font-bold text-slate-700">曜日一括OFF機能 (特定曜日をまとめて休練に設定)</label>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="1" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">月</span>
+                            </label>
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="2" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">火</span>
+                            </label>
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="3" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">水</span>
+                            </label>
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="4" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">木</span>
+                            </label>
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="5" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">金</span>
+                            </label>
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 text-blue-600 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="6" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">土</span>
+                            </label>
+                            <label class="inline-flex items-center bg-white px-3 py-1.5 rounded-lg border border-slate-300 text-rose-600 cursor-pointer hover:bg-slate-100">
+                                <input type="checkbox" value="0" class="batch-day-off-chk rounded text-emerald-600"> <span class="ml-1.5 font-bold">日</span>
+                            </label>
+                            <button onclick="applyBatchDayOff()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold ml-auto tap-btn shadow-sm">
+                                選択曜日をOFFにする
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Individual Day Practice Settings Table -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-700">各日の個別詳細設定 (場所・時間・ON/OFF)</label>
+                        <div id="admin-days-config-list" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                            <!-- Dynamic Day Config Rows -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Realtime Firebase Cloud Sync Setup Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                    <h3 class="font-extrabold text-sm text-slate-800 flex items-center">
+                        <i class="fa-solid fa-cloud text-emerald-600 mr-2"></i>
+                        クラウドリアルタイム同期 (Firebase Realtime Database) 設定
+                    </h3>
+                    <p class="text-xs text-slate-500">
+                        生徒の端末と顧問の端末間でデータを双方向でリアルタイム連動させるには、Firebaseの接続情報を登録します。(未設定時はブラウザ単体で動作します)
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="sm:col-span-2">
+                            <label class="block font-bold text-slate-600 mb-1">Firebase Database URL (`databaseURL`)</label>
+                            <input type="text" id="fb-database-url" placeholder="https://your-app-rtdb.firebaseio.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">API Key (`apiKey`)</label>
+                            <input type="text" id="fb-api-key" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">Project ID (`projectId`)</label>
+                            <input type="text" id="fb-project-id" placeholder="your-project-id" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 font-mono">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="saveFirebaseConfig()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-bold tap-btn shadow-sm">
+                            クラウド同期設定を有効化
+                        </button>
+                        <button onclick="clearFirebaseConfig()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs px-3 py-2 rounded-xl font-bold tap-btn">
+                            設定解除
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Direct Background Email Notification Settings (EmailJS) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                    <h3 class="font-extrabold text-sm text-slate-800 flex items-center">
+                        <i class="fa-solid fa-envelope-circle-check text-emerald-600 mr-2"></i>
+                        緊急連絡用 メールダイレクト自動送信設定 (EmailJS)
+                    </h3>
+                    <p class="text-xs text-slate-500">部員が直前緊急連絡を送信した際に顧問宛てへバックグラウンドメール通知を行う場合の設定です。</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">顧問通知先メールアドレス</label>
+                            <input type="email" id="emailjs-advisor-mail" placeholder="advisor@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">EmailJS Public Key</label>
+                            <input type="text" id="emailjs-public-key" placeholder="Public Key" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">EmailJS Service ID</label>
+                            <input type="text" id="emailjs-service-id" placeholder="service_xxx" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-600 mb-1">EmailJS Template ID</label>
+                            <input type="text" id="emailjs-template-id" placeholder="template_xxx" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2">
+                        </div>
+                    </div>
+                    <button onclick="saveEmailConfig()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl font-bold tap-btn shadow-sm">
+                        メール送信設定を保存
+                    </button>
+                </div>
+            </div>
+        </section>
     </main>
 
+    <!-- Emergency Contact Modal Box -->
+    <div id="emergency-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-red-200">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
+                <h3 class="font-extrabold text-red-600 flex items-center text-base">
+                    <i class="fa-solid fa-bell mr-2"></i>直前緊急 予定変更・連絡送信
+                </h3>
+                <button onclick="closeEmergencyModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleEmergencySubmit(event)" class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">部員名 <span class="text-red-500">*</span></label>
+                    <select id="emg-student-name" required class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold text-slate-800">
+                        <!-- Populated via JS -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">変更後の状況 <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center space-x-2 border p-2.5 rounded-xl cursor-pointer hover:bg-rose-50/50">
+                            <input type="radio" name="emg-status" value="X" checked class="text-rose-600 focus:ring-rose-500">
+                            <span class="font-bold text-rose-600">✕ 急遽不参加</span>
+                        </label>
+                        <label class="flex items-center space-x-2 border p-2.5 rounded-xl cursor-pointer hover:bg-amber-50/50">
+                            <input type="radio" name="emg-status" value="TRIANGLE" class="text-amber-600 focus:ring-amber-500">
+                            <span class="font-bold text-amber-600">△ 遅れて参加/未定</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">緊急連絡・変更理由 (発熱・怪我等) <span class="text-red-500">*</span></label>
+                    <textarea id="emg-reason" required rows="3" placeholder="例: 今朝発熱が37.8度あり身体のだるさがあるため、本日の朝練は不参加とさせてください。" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-800 focus:ring-2 focus:ring-rose-500"></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeEmergencyModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-xl tap-btn">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-md tap-btn flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-paper-plane mr-1"></i>
+                        <span>送信する</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        let PointA = { x: -4, y: -2 };
-        let PointB = { x: 2, y: 4 };
-
-        let m = 2;
-        let n = 1;
-        let isAnimating = false;
-        let animProgress = 0;
-        let trailPoints = [];
-        let animationFrameId = null;
-
-        let originX = 0;
-        let originY = 0;
-        let scale = 25;
-
-        let isDragging = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-
-        // DOM Element References
-        let canvas, ctx;
-        let sliderM, sliderN, valM, valN, ratioText, btnStart, btnClear, btnResetView;
-        let sliderAx, sliderAy, sliderBx, sliderBy, valAx, valAy, valBx, valBy, badgeA, badgeB;
-        let equationText, shapeTypeBadge, detailsContainer, centerText, radiusText, pinText, poutText;
-        let animStatus, pCoordText, apLengthText, bpLengthText, ratioCalcText;
-
-        // 最大公約数を求める関数
-        function gcd(a, b) {
-            a = Math.abs(Math.round(a));
-            b = Math.abs(Math.round(b));
-            while (b) {
-                let t = b;
-                b = a % b;
-                a = t;
-            }
-            return a || 1;
-        }
-
-        // 平方根の簡素化 √n = k * √u (uは平方因子を持たない)
-        function simplifySquareRoot(n) {
-            let k = 1;
-            let u = Math.round(n);
-            for (let i = 2; i * i <= u; i++) {
-                while (u % (i * i) === 0) {
-                    k *= i;
-                    u /= (i * i);
-                }
-            }
-            return { k, u };
-        }
-
-        // 整数または分数を綺麗にフォーマットするヘルパー
-        function formatFraction(num, den) {
-            if (den < 0) { num = -num; den = -den; }
-            const g = gcd(num, den);
-            const n = Math.round(num / g);
-            const d = Math.round(den / g);
-            if (d === 1) return `${n}`;
-            return `${n}/${d}`;
-        }
-
-        // 半径Rの厳密表現（√形式および分数表現）を算出する関数
-        function getExactRadiusInfo(m, n) {
-            if (m === n) return null;
-
-            const dx = PointB.x - PointA.x;
-            const dy = PointB.y - PointA.y;
-            const d2 = dx * dx + dy * dy;
-
-            if (d2 === 0) return null;
-
-            const { k, u } = simplifySquareRoot(d2);
-
-            // R = (m * n * k * √u) / |m^2 - n^2|
-            const numK = m * n * k;
-            const denom = Math.abs(m * m - n * n);
-            const g = gcd(numK, denom);
-            const a = numK / g;
-            const b = denom / g;
-
-            // R^2 = (m^2 * n^2 * d2) / (m^2 - n^2)^2
-            const r2Num = m * m * n * n * d2;
-            const r2Den = (m * m - n * n) * (m * m - n * n);
-            const g2 = gcd(r2Num, r2Den);
-            const r2N = r2Num / g2;
-            const r2D = r2Den / g2;
-
-            let radicalStr = "";
-            let sqrtTerm = (u === 1) ? "" : (a === 1 ? `√${u}` : `${a}√${u}`);
-
-            if (u === 1) {
-                radicalStr = formatFraction(a, b);
-            } else {
-                radicalStr = (b === 1) ? sqrtTerm : `${sqrtTerm}/${b}`;
-            }
-
-            let singleSqrtStr = "";
-            if (u === 1) {
-                singleSqrtStr = formatFraction(a, b);
-            } else {
-                let insideSqrt = (r2D === 1) ? `${r2N}` : `${r2N}/${r2D}`;
-                singleSqrtStr = (r2D === 1) ? `√${r2N}` : `√(${insideSqrt})`;
-            }
-
-            let exactDisplay = (u === 1) ? radicalStr : `${radicalStr} (＝${singleSqrtStr})`;
-            const r2Str = (r2D === 1) ? `${r2N}` : `${r2N}/${r2D}`;
-            const radiusVal = (a * Math.sqrt(u)) / b;
-
-            return {
-                a, b, u,
-                r2N, r2D,
-                r2Str,
-                radicalStr,
-                singleSqrtStr,
-                exactDisplay,
-                radiusVal
-            };
-        }
-
-        function calculateGeometry() {
-            if (PointA.x === PointB.x && PointA.y === PointB.y) {
-                return {
-                    isLine: true,
-                    isInvalid: true,
-                    equation: "点Aと点Bが同じ位置です"
-                };
-            }
-
-            if (m === n) {
-                // 線分ABの垂直二等分線: dx*(x - mx) + dy*(y - my) = 0
-                const dx = PointB.x - PointA.x;
-                const dy = PointB.y - PointA.y;
-                const mx = (PointA.x + PointB.x) / 2;
-                const my = (PointA.y + PointB.y) / 2;
-
-                const rhs = dx * mx + dy * my;
-
-                let eqStr = "";
-                if (dy === 0) {
-                    eqStr = `x = ${formatFraction(dx * mx, dx)}`;
-                } else if (dx === 0) {
-                    eqStr = `y = ${formatFraction(dy * my, dy)}`;
-                } else {
-                    const slope = -dx / dy;
-                    const intercept = rhs / dy;
-                    const slopeStr = (slope === 1) ? '' : (slope === -1 ? '-' : slope.toFixed(2));
-                    const sign = intercept >= 0 ? '+' : '-';
-                    eqStr = `y = ${slopeStr}x ${sign} ${Math.abs(intercept).toFixed(2)}`;
-                }
-
-                return {
-                    isLine: true,
-                    isInvalid: false,
-                    equation: `${eqStr} (線分ABの垂直二等分線)`
-                };
-            } else {
-                const m2 = m * m;
-                const n2 = n * n;
-                const denom = m2 - n2;
-
-                const xc = (m2 * PointB.x - n2 * PointA.x) / denom;
-                const yc = (m2 * PointB.y - n2 * PointA.y) / denom;
-
-                const distAB = Math.hypot(PointB.x - PointA.x, PointB.y - PointA.y);
-                const radius = (m * n * distAB) / Math.abs(denom);
-                const exactR = getExactRadiusInfo(m, n);
-
-                const pin = {
-                    x: (n * PointA.x + m * PointB.x) / (m + n),
-                    y: (n * PointA.y + m * PointB.y) / (m + n)
-                };
-
-                const pout = {
-                    x: (-n * PointA.x + m * PointB.x) / (m - n),
-                    y: (-n * PointA.y + m * PointB.y) / (m - n)
-                };
-
-                return {
-                    isLine: false,
-                    isInvalid: false,
-                    center: { x: xc, y: yc },
-                    radius: radius,
-                    exactR: exactR,
-                    pin: pin,
-                    pout: pout,
-                    equation: `(x ${xc >= 0 ? '-' : '+'} ${Math.abs(xc).toFixed(2)})² + (y ${yc >= 0 ? '-' : '+'} ${Math.abs(yc).toFixed(2)})² = ${exactR.r2Str}`
-                };
-            }
-        }
-
-        function worldToScreen(wx, wy) {
-            return {
-                x: originX + wx * scale,
-                y: originY - wy * scale
-            };
-        }
-
-        function screenToWorld(sx, sy) {
-            return {
-                x: (sx - originX) / scale,
-                y: (originY - sy) / scale
-            };
-        }
-
-        function draw() {
-            if (!canvas || !ctx) return;
-
-            const width = canvas.width / window.devicePixelRatio;
-            const height = canvas.height / window.devicePixelRatio;
-
-            ctx.clearRect(0, 0, width, height);
-
-            // Draw Coordinate Grid
-            ctx.lineWidth = 1;
-            const topLeft = screenToWorld(0, 0);
-            const bottomRight = screenToWorld(width, height);
-
-            const minX = Math.floor(topLeft.x);
-            const maxX = Math.ceil(bottomRight.x);
-            const minY = Math.floor(bottomRight.y);
-            const maxY = Math.ceil(topLeft.y);
-
-            // Grid lines
-            ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
-            ctx.beginPath();
-            for (let x = minX; x <= maxX; x++) {
-                const sp = worldToScreen(x, 0);
-                ctx.moveTo(sp.x, 0);
-                ctx.lineTo(sp.x, height);
-            }
-            for (let y = minY; y <= maxY; y++) {
-                const sp = worldToScreen(0, y);
-                ctx.moveTo(0, sp.y);
-                ctx.lineTo(width, sp.y);
-            }
-            ctx.stroke();
-
-            // Axes
-            const originScreen = worldToScreen(0, 0);
-            ctx.strokeStyle = 'rgba(148, 163, 184, 0.8)';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            // X-axis
-            ctx.moveTo(0, originScreen.y);
-            ctx.lineTo(width, originScreen.y);
-            // Y-axis
-            ctx.moveTo(originScreen.x, 0);
-            ctx.lineTo(originScreen.x, height);
-            ctx.stroke();
-
-            // Axis numbers/labels
-            ctx.fillStyle = '#64748b';
-            ctx.font = '10px JetBrains Mono';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-
-            for (let x = minX; x <= maxX; x++) {
-                if (x === 0) continue;
-                const sp = worldToScreen(x, 0);
-                if (sp.x > 0 && sp.x < width) {
-                    ctx.fillText(x, sp.x, Math.min(Math.max(originScreen.y + 4, 4), height - 16));
-                }
-            }
-
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            for (let y = minY; y <= maxY; y++) {
-                if (y === 0) continue;
-                const sp = worldToScreen(0, y);
-                if (sp.y > 0 && sp.y < height) {
-                    ctx.fillText(y, Math.min(Math.max(originScreen.x - 6, 20), width - 4), sp.y);
-                }
-            }
-
-            const geo = calculateGeometry();
-
-            // Draw full background shape (dashed)
-            if (!geo.isInvalid) {
-                if (!geo.isLine) {
-                    const centerScr = worldToScreen(geo.center.x, geo.center.y);
-                    const rScr = geo.radius * scale;
-
-                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-                    ctx.lineWidth = 1.5;
-                    ctx.setLineDash([4, 4]);
-                    ctx.beginPath();
-                    ctx.arc(centerScr.x, centerScr.y, rScr, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-
-                    // Center point C
-                    ctx.fillStyle = '#38bdf8';
-                    ctx.beginPath();
-                    ctx.arc(centerScr.x, centerScr.y, 3, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Pin and Pout
-                    const pinScr = worldToScreen(geo.pin.x, geo.pin.y);
-                    const poutScr = worldToScreen(geo.pout.x, geo.pout.y);
-
-                    drawLabeledPoint(pinScr, 'Pin', '#34d399', 4);
-                    drawLabeledPoint(poutScr, 'Pout', '#34d399', 4);
-                } else {
-                    // Perpendicular bisector background line
-                    const dx = PointB.x - PointA.x;
-                    const dy = PointB.y - PointA.y;
-                    const mx = (PointA.x + PointB.x) / 2;
-                    const my = (PointA.y + PointB.y) / 2;
-
-                    let vx = -dy;
-                    let vy = dx;
-                    const len = Math.hypot(vx, vy);
-                    if (len > 0) { vx /= len; vy /= len; }
-
-                    const maxCoord = Math.max(Math.abs(topLeft.x), Math.abs(bottomRight.x), Math.abs(topLeft.y), Math.abs(bottomRight.y)) + 20;
-                    const p1 = worldToScreen(mx + vx * maxCoord, my + vy * maxCoord);
-                    const p2 = worldToScreen(mx - vx * maxCoord, my - vy * maxCoord);
-
-                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-                    ctx.lineWidth = 1.5;
-                    ctx.setLineDash([4, 4]);
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-            }
-
-            // Animated Trail
-            if (trailPoints.length > 1) {
-                ctx.strokeStyle = '#f43f5e';
-                ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.beginPath();
-
-                const startP = worldToScreen(trailPoints[0].x, trailPoints[0].y);
-                ctx.moveTo(startP.x, startP.y);
-
-                for (let i = 1; i < trailPoints.length; i++) {
-                    const pt = worldToScreen(trailPoints[i].x, trailPoints[i].y);
-                    ctx.lineTo(pt.x, pt.y);
-                }
-                ctx.stroke();
-            }
-
-            const scrA = worldToScreen(PointA.x, PointA.y);
-            const scrB = worldToScreen(PointB.x, PointB.y);
-
-            // Dynamic Lines PA & PB
-            if (trailPoints.length > 0) {
-                const currentP = trailPoints[trailPoints.length - 1];
-                const scrP = worldToScreen(currentP.x, currentP.y);
-
-                // Line PA
-                ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(scrA.x, scrA.y);
-                ctx.lineTo(scrP.x, scrP.y);
-                ctx.stroke();
-
-                // Line PB
-                ctx.strokeStyle = 'rgba(129, 140, 248, 0.8)';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(scrB.x, scrB.y);
-                ctx.lineTo(scrP.x, scrP.y);
-                ctx.stroke();
-
-                // Point P
-                ctx.fillStyle = '#f43f5e';
-                ctx.shadowColor = 'rgba(244, 63, 94, 0.6)';
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(scrP.x, scrP.y, 6, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // Point P Label
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 12px Inter';
-                ctx.textAlign = 'left';
-                ctx.fillText(`P (${currentP.x.toFixed(2)}, ${currentP.y.toFixed(2)})`, scrP.x + 10, scrP.y - 10);
-            }
-
-            // Fixed Points A and B
-            drawLabeledPoint(scrA, `A (${PointA.x}, ${PointA.y})`, '#f59e0b', 6);
-            drawLabeledPoint(scrB, `B (${PointB.x}, ${PointB.y})`, '#f59e0b', 6);
-        }
-
-        function drawLabeledPoint(pos, label, color, r = 5) {
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 6;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            ctx.fillStyle = '#f1f5f9';
-            ctx.font = '500 11px JetBrains Mono';
-            ctx.textAlign = 'left';
-            ctx.fillText(label, pos.x + 8, pos.y + 12);
-        }
-
-        function resizeCanvas() {
-            if (!canvas) return;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
-            
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-            if (originX === 0 && originY === 0) {
-                resetView();
-            } else {
-                draw();
-            }
-        }
-
-        function resetView() {
-            if (!canvas) return;
-            const width = canvas.width / window.devicePixelRatio;
-            const height = canvas.height / window.devicePixelRatio;
-
-            const geo = calculateGeometry();
-
-            let minX = Math.min(PointA.x, PointB.x);
-            let maxX = Math.max(PointA.x, PointB.x);
-            let minY = Math.min(PointA.y, PointB.y);
-            let maxY = Math.max(PointA.y, PointB.y);
-
-            if (!geo.isInvalid && !geo.isLine) {
-                minX = Math.min(minX, geo.center.x - geo.radius);
-                maxX = Math.max(maxX, geo.center.x + geo.radius);
-                minY = Math.min(minY, geo.center.y - geo.radius);
-                maxY = Math.max(maxY, geo.center.y + geo.radius);
-            }
-
-            const rangeX = (maxX - minX) || 10;
-            const rangeY = (maxY - minY) || 10;
-            const padding = 3.5;
-
-            const scaleX = width / (rangeX + padding * 2);
-            const scaleY = height / (rangeY + padding * 2);
-            scale = Math.min(scaleX, scaleY, 40);
-
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-
-            originX = width / 2 - centerX * scale;
-            originY = height / 2 + centerY * scale;
-
-            draw();
-        }
-
-        function getPointAtProgress(progress) {
-            const geo = calculateGeometry();
-
-            if (!geo.isLine) {
-                // m ≠ n: Apollonian Circle
-                // スタート点: 円の最右点 (Xc + R, Yc) -> 反時計回りに回転
-                const angle = progress * Math.PI * 2;
-                const x = geo.center.x + geo.radius * Math.cos(angle);
-                const y = geo.center.y + geo.radius * Math.sin(angle);
-                return { x, y };
-            } else {
-                // m = n: 垂直二等分線を画面最右点から左へ描画
-                const dx = PointB.x - PointA.x;
-                const dy = PointB.y - PointA.y;
-                const mx = (PointA.x + PointB.x) / 2;
-                const my = (PointA.y + PointB.y) / 2;
-
-                // 垂直二等分線の方向ベクトル (-dy, dx)
-                let vx = -dy;
-                let vy = dx;
-                if (vx < 0) { vx = -vx; vy = -vy; } // 右向きを保証
-
-                const len = Math.hypot(vx, vy);
-                if (len > 0) { vx /= len; vy /= len; }
-
-                const width = canvas.width / window.devicePixelRatio;
-                const height = canvas.height / window.devicePixelRatio;
-                const topLeft = screenToWorld(0, 0);
-                const bottomRight = screenToWorld(width, height);
-                const span = Math.max(Math.abs(topLeft.x), Math.abs(bottomRight.x), Math.abs(topLeft.y), Math.abs(bottomRight.y)) + 15;
-
-                const startT = span;
-                const endT = -span;
-                const currentT = startT + (endT - startT) * progress;
-
-                return { x: mx + vx * currentT, y: my + vy * currentT };
-            }
-        }
-
-        function clearTrajectory() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            isAnimating = false;
-            animProgress = 0;
-            trailPoints = [];
-
-            animStatus.textContent = "待機中";
-            animStatus.className = "text-[10px] text-slate-500";
-            pCoordText.textContent = "-";
-            apLengthText.textContent = "-";
-            bpLengthText.textContent = "-";
-            ratioCalcText.textContent = "-";
-
-            draw();
-        }
-
-        function startAnimation() {
-            clearTrajectory();
-            isAnimating = true;
-            animProgress = 0;
-            animStatus.textContent = "描画中...";
-            animStatus.className = "text-[10px] text-rose-400 font-bold animate-pulse";
-
-            function animateLoop() {
-                if (!isAnimating) return;
-
-                animProgress += 0.008;
-                if (animProgress >= 1) {
-                    animProgress = 1;
-                    isAnimating = false;
-                    animStatus.textContent = "描画完了";
-                    animStatus.className = "text-[10px] text-emerald-400 font-bold";
-                }
-
-                const pt = getPointAtProgress(animProgress);
-                trailPoints.push(pt);
-
-                // Live Point P calculations
-                const ap = Math.hypot(pt.x - PointA.x, pt.y - PointA.y);
-                const bp = Math.hypot(pt.x - PointB.x, pt.y - PointB.y);
-                const ratio = bp > 0 ? (ap / bp).toFixed(2) : "-";
-
-                pCoordText.textContent = `(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`;
-                apLengthText.textContent = ap.toFixed(2);
-                bpLengthText.textContent = bp.toFixed(2);
-                ratioCalcText.textContent = ratio;
-
-                draw();
-
-                if (isAnimating) {
-                    animationFrameId = requestAnimationFrame(animateLoop);
-                }
-            }
-
-            animateLoop();
-        }
-
-        function updateUI() {
-            m = parseInt(sliderM.value);
-            n = parseInt(sliderN.value);
-
-            PointA.x = parseInt(sliderAx.value);
-            PointA.y = parseInt(sliderAy.value);
-            PointB.x = parseInt(sliderBx.value);
-            PointB.y = parseInt(sliderBy.value);
-
-            valM.textContent = m;
-            valN.textContent = n;
-            ratioText.textContent = `${m} : ${n}`;
-
-            valAx.textContent = PointA.x;
-            valAy.textContent = PointA.y;
-            valBx.textContent = PointB.x;
-            valBy.textContent = PointB.y;
-
-            badgeA.textContent = `点A = (${PointA.x}, ${PointA.y})`;
-            badgeB.textContent = `点B = (${PointB.x}, ${PointB.y})`;
-
-            const geo = calculateGeometry();
-
-            equationText.textContent = geo.equation;
-
-            if (geo.isLine) {
-                shapeTypeBadge.textContent = geo.isInvalid ? "同一点（計算不可）" : "線分ABの垂直二等分線 (m = n)";
-                shapeTypeBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-3";
-                detailsContainer.classList.add('hidden');
-            } else {
-                shapeTypeBadge.textContent = "アポロニウスの円 (m ≠ n)";
-                shapeTypeBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3";
-                detailsContainer.classList.remove('hidden');
-
-                centerText.textContent = `(${geo.center.x.toFixed(2)}, ${geo.center.y.toFixed(2)})`;
-                radiusText.textContent = `${geo.exactR.exactDisplay} ≈ ${geo.radius.toFixed(2)}`;
-                pinText.textContent = `(${geo.pin.x.toFixed(2)}, ${geo.pin.y.toFixed(2)})`;
-                poutText.textContent = `(${geo.pout.x.toFixed(2)}, ${geo.pout.y.toFixed(2)})`;
-            }
-
-            clearTrajectory();
-        }
-
-        function initDOMReferences() {
-            canvas = document.getElementById('simCanvas');
-            ctx = canvas.getContext('2d');
-
-            sliderM = document.getElementById('sliderM');
-            sliderN = document.getElementById('sliderN');
-            valM = document.getElementById('valM');
-            valN = document.getElementById('valN');
-            ratioText = document.getElementById('ratioText');
-
-            sliderAx = document.getElementById('sliderAx');
-            sliderAy = document.getElementById('sliderAy');
-            sliderBx = document.getElementById('sliderBx');
-            sliderBy = document.getElementById('sliderBy');
-            valAx = document.getElementById('valAx');
-            valAy = document.getElementById('valAy');
-            valBx = document.getElementById('valBx');
-            valBy = document.getElementById('valBy');
-            badgeA = document.getElementById('badgeA');
-            badgeB = document.getElementById('badgeB');
-
-            btnStart = document.getElementById('btnStart');
-            btnClear = document.getElementById('btnClear');
-            btnResetView = document.getElementById('btnResetView');
-
-            equationText = document.getElementById('equationText');
-            shapeTypeBadge = document.getElementById('shapeTypeBadge');
-            detailsContainer = document.getElementById('detailsContainer');
-            centerText = document.getElementById('centerText');
-            radiusText = document.getElementById('radiusText');
-            pinText = document.getElementById('pinText');
-            poutText = document.getElementById('poutText');
-
-            animStatus = document.getElementById('animStatus');
-            pCoordText = document.getElementById('pCoordText');
-            apLengthText = document.getElementById('apLengthText');
-            bpLengthText = document.getElementById('bpLengthText');
-            ratioCalcText = document.getElementById('ratioCalcText');
-
-            // Slider listeners
-            sliderM.addEventListener('input', updateUI);
-            sliderN.addEventListener('input', updateUI);
-            sliderAx.addEventListener('input', updateUI);
-            sliderAy.addEventListener('input', updateUI);
-            sliderBx.addEventListener('input', updateUI);
-            sliderBy.addEventListener('input', updateUI);
-
-            // Button listeners
-            btnStart.addEventListener('click', startAnimation);
-            btnClear.addEventListener('click', clearTrajectory);
-            btnResetView.addEventListener('click', resetView);
-
-            // Canvas Drag & Zoom Handlers
-            canvas.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                dragStartX = e.clientX;
-                dragStartY = e.clientY;
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                const dx = e.clientX - dragStartX;
-                const dy = e.clientY - dragStartY;
-                dragStartX = e.clientX;
-                dragStartY = e.clientY;
-
-                originX += dx;
-                originY += dy;
-                draw();
-            });
-
-            window.addEventListener('mouseup', () => { isDragging = false; });
-
-            // Wheel Zoom Handler
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-                
-                const rect = canvas.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-
-                originX = mouseX - (mouseX - originX) * zoomFactor;
-                originY = mouseY - (mouseY - originY) * zoomFactor;
-                scale *= zoomFactor;
-
-                draw();
-            }, { passive: false });
-
-            // Window Resize Handler
-            window.addEventListener('resize', resizeCanvas);
-        }
-
-        // Initialization Entrypoint
-        window.onload = () => {
-            initDOMReferences();
-            resizeCanvas();
-            resetView();
-            updateUI();
+        // System Constants
+        const CONSTANTS = {
+            PIN: "2692",
+            DEFAULT_LOCATION: "グラウンド",
+            DEFAULT_START_TIME: "07:00",
+            DEFAULT_END_TIME: "08:00"
         };
 
+        // Application State
+        let appState = {
+            currentMonth: "", // e.g. "2026-10"
+            students: [],     // Array of student name strings
+            monthConfigs: {}, // { "2026-10": { days: [...] } }
+            answers: {},      // { "2026-10": { "部員名": { "1": { status: 'O'|'TRIANGLE'|'X', comment: '' } } } }
+            emergencyLogs: [],
+            emailConfig: { advisorEmail: '', publicKey: '', serviceId: '', templateId: '' },
+            firebaseConfig: { databaseURL: '', apiKey: '', projectId: '' },
+            isAdminUnlocked: false,
+            currentActiveStudent: ""
+        };
+
+        let dbRef = null;
+        let isFirebaseConnected = false;
+
+        // Window Onload Initialization
+        window.onload = function() {
+            loadAppStateFromStorage();
+
+            // Set current active month default
+            if (!appState.currentMonth) {
+                const now = new Date();
+                appState.currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            ensureMonthConfig(appState.currentMonth);
+            updateMonthSelectors();
+
+            // Initialize Firebase if configured
+            initFirebase();
+
+            // Check Emergency Window
+            checkEmergencyWindow();
+
+            // Initial Renders
+            renderStudentView();
+            renderDashboardView();
+            renderAdminView();
+        };
+
+        // Storage Utilities
+        function loadAppStateFromStorage() {
+            try {
+                const saved = localStorage.getItem('soccer_club_app_state_v2');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    appState = { ...appState, ...parsed };
+                }
+            } catch (e) {
+                console.error("Storage load error:", e);
+            }
+        }
+
+        function saveAppState() {
+            try {
+                localStorage.setItem('soccer_club_app_state_v2', JSON.stringify(appState));
+                syncToFirebase();
+            } catch (e) {
+                console.error("Storage save error:", e);
+            }
+        }
+
+        // Realtime Firebase Integration
+        function initFirebase() {
+            const cfg = appState.firebaseConfig;
+            if (cfg && cfg.databaseURL && cfg.apiKey) {
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp({
+                            apiKey: cfg.apiKey,
+                            databaseURL: cfg.databaseURL,
+                            projectId: cfg.projectId || "soccer-club-app"
+                        });
+                    }
+                    dbRef = firebase.database().ref('soccer_club_data');
+                    isFirebaseConnected = true;
+
+                    // Listen for real-time cloud changes
+                    dbRef.on('value', (snapshot) => {
+                        const val = snapshot.val();
+                        if (val) {
+                            appState.students = val.students || appState.students;
+                            appState.monthConfigs = val.monthConfigs || appState.monthConfigs;
+                            appState.answers = val.answers || appState.answers;
+                            appState.emergencyLogs = val.emergencyLogs || appState.emergencyLogs;
+
+                            updateMonthSelectors();
+                            renderStudentView();
+                            renderDashboardView();
+                            renderAdminView();
+                        }
+                    });
+
+                    document.getElementById('sync-status-badge').className = "text-[10px] bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/50 flex items-center gap-1 font-normal";
+                    document.getElementById('sync-status-badge').children[0].className = "w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping";
+                    document.getElementById('sync-status-text').textContent = "クラウド同期中";
+                } catch (err) {
+                    console.error("Firebase init failed:", err);
+                    isFirebaseConnected = false;
+                    document.getElementById('sync-status-text').textContent = "ローカル動作中";
+                }
+            }
+        }
+
+        function syncToFirebase() {
+            if (isFirebaseConnected && dbRef) {
+                dbRef.set({
+                    students: appState.students,
+                    monthConfigs: appState.monthConfigs,
+                    answers: appState.answers,
+                    emergencyLogs: appState.emergencyLogs
+                }).catch(err => console.error("Firebase sync write error:", err));
+            }
+        }
+
+        // Helper: Ensure Month Config exists
+        function ensureMonthConfig(monthStr) {
+            if (!appState.monthConfigs[monthStr]) {
+                const [year, month] = monthStr.split('-').map(Number);
+                const daysInMonth = new Date(year, month, 0).getDate();
+                
+                const daysArr = [];
+                for (let d = 1; d <= daysInMonth; d++) {
+                    daysArr.push({
+                        day: d,
+                        location: CONSTANTS.DEFAULT_LOCATION,
+                        startTime: CONSTANTS.DEFAULT_START_TIME,
+                        endTime: CONSTANTS.DEFAULT_END_TIME,
+                        isOff: false
+                    });
+                }
+                appState.monthConfigs[monthStr] = { days: daysArr };
+                saveAppState();
+            }
+        }
+
+        function switchTab(tabName) {
+            ['student', 'dashboard', 'admin'].forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const view = document.getElementById(`view-${t}`);
+                if (t === tabName) {
+                    btn.classList.add('border-amber-400', 'text-amber-300');
+                    btn.classList.remove('border-transparent', 'text-emerald-100');
+                    view.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('border-amber-400', 'text-amber-300');
+                    btn.classList.add('border-transparent', 'text-emerald-100');
+                    view.classList.add('hidden');
+                }
+            });
+
+            if (tabName === 'dashboard') renderDashboardView();
+            else if (tabName === 'admin') renderAdminView();
+        }
+
+        function updateMonthSelectors() {
+            const select = document.getElementById('global-month-select');
+            select.innerHTML = '';
+
+            const existingMonths = Object.keys(appState.monthConfigs);
+            if (!existingMonths.includes(appState.currentMonth)) {
+                existingMonths.push(appState.currentMonth);
+            }
+            existingMonths.sort();
+
+            existingMonths.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                const [y, mm] = m.split('-');
+                opt.textContent = `${y}年${mm}月`;
+                if (m === appState.currentMonth) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            const [y, mm] = appState.currentMonth.split('-');
+            document.getElementById('student-view-month').textContent = `${y}年${mm}月`;
+            document.getElementById('dashboard-month-title').textContent = `${y}年${mm}月`;
+            document.getElementById('admin-month-title').textContent = `${y}年${mm}月`;
+        }
+
+        function handleMonthChange(newMonth) {
+            appState.currentMonth = newMonth;
+            ensureMonthConfig(newMonth);
+            saveAppState();
+            updateMonthSelectors();
+            renderStudentView();
+            renderDashboardView();
+            renderAdminView();
+            showToast(`対象月を ${newMonth} に変更しました`);
+        }
+
+        function promptAddNewMonth() {
+            const val = prompt("追加する年月を入力してください (例: 2026-11):", appState.currentMonth);
+            if (val && /^\d{4}-\d{2}$/.test(val)) {
+                appState.currentMonth = val;
+                ensureMonthConfig(val);
+                saveAppState();
+                updateMonthSelectors();
+                renderStudentView();
+                showToast(`${val} を追加しました`);
+            } else if (val) {
+                alert("YYYY-MM の形式で指定してください (例: 2026-11)");
+            }
+        }
+
+        function promptRegisterStudent() {
+            const name = prompt("新規部員の氏名を入力してください:");
+            if (name && name.trim()) {
+                const trimmed = name.trim();
+                if (!appState.students.includes(trimmed)) {
+                    appState.students.push(trimmed);
+                    appState.currentActiveStudent = trimmed;
+                    saveAppState();
+                    renderStudentView();
+                    renderAdminView();
+                    showToast(`部員「${trimmed}」を登録しました`);
+                } else {
+                    alert("既に登録されている氏名です");
+                }
+            }
+        }
+
+        function onStudentSelectChange() {
+            const sel = document.getElementById('student-name-select');
+            appState.currentActiveStudent = sel.value;
+            renderStudentViewCards();
+        }
+
+        function renderStudentView() {
+            const sel = document.getElementById('student-name-select');
+            const emgSel = document.getElementById('emg-student-name');
+            sel.innerHTML = '<option value="">-- 名前を選択してください --</option>';
+            emgSel.innerHTML = '<option value="">-- 名前を選択 --</option>';
+
+            appState.students.forEach(st => {
+                const opt = document.createElement('option');
+                opt.value = st;
+                opt.textContent = st;
+                if (st === appState.currentActiveStudent) opt.selected = true;
+                sel.appendChild(opt);
+
+                const optEmg = opt.cloneNode(true);
+                emgSel.appendChild(optEmg);
+            });
+
+            renderStudentViewCards();
+        }
+
+        function renderStudentViewCards() {
+            const container = document.getElementById('student-schedule-list');
+            container.innerHTML = '';
+
+            const activeMonth = appState.currentMonth;
+            const config = appState.monthConfigs[activeMonth];
+            if (!config) return;
+
+            const studentName = appState.currentActiveStudent;
+            const existingAnswers = (appState.answers[activeMonth] && studentName && appState.answers[activeMonth][studentName]) 
+                ? appState.answers[activeMonth][studentName] 
+                : {};
+
+            const [year, month] = activeMonth.split('-').map(Number);
+
+            config.days.forEach(dayObj => {
+                const dateObj = new Date(year, month - 1, dayObj.day);
+                const dayOfWeekNum = dateObj.getDay();
+                const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+                const dayStr = dayNames[dayOfWeekNum];
+
+                let dayColorClass = 'text-slate-700 bg-slate-100';
+                if (dayOfWeekNum === 0) dayColorClass = 'text-red-600 bg-red-50 border-red-200';
+                else if (dayOfWeekNum === 6) dayColorClass = 'text-blue-600 bg-blue-50 border-blue-200';
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-2xl shadow-sm border p-3.5 transition ${dayObj.isOff ? 'opacity-60 bg-slate-50' : 'border-slate-200'}`;
+
+                const curAnswer = existingAnswers[dayObj.day] || { status: '', comment: '' };
+
+                card.innerHTML = `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-black px-2.5 py-1 rounded-xl border text-center min-w-[60px] ${dayColorClass}">
+                                ${month}/${dayObj.day} <span class="text-xs font-normal">(${dayStr})</span>
+                            </span>
+                            ${dayObj.isOff ? 
+                                `<span class="bg-slate-200 text-slate-600 text-xs px-2.5 py-1 rounded-lg font-extrabold">練習OFF (休み)</span>` : 
+                                `<div class="text-xs text-slate-500">
+                                    <span class="font-bold text-slate-700 mr-2"><i class="fa-solid fa-location-dot text-emerald-600 mr-1"></i>${dayObj.location}</span>
+                                    <span><i class="fa-regular fa-clock mr-1"></i>${dayObj.startTime}〜${dayObj.endTime}</span>
+                                </div>`
+                            }
+                        </div>
+                    </div>
+                `;
+
+                if (!dayObj.isOff) {
+                    const statusKey = `day-status-${dayObj.day}`;
+                    const commentKey = `day-comment-${dayObj.day}`;
+
+                    const flexOptions = document.createElement('div');
+                    flexOptions.className = "grid grid-cols-3 gap-2 mt-2.5";
+
+                    const options = [
+                        { val: 'O', label: '〇 参加', color: 'peer-checked:bg-emerald-600 peer-checked:text-white border-emerald-300 text-emerald-700 bg-emerald-50/50' },
+                        { val: 'TRIANGLE', label: '△ 未定', color: 'peer-checked:bg-amber-500 peer-checked:text-white border-amber-300 text-amber-700 bg-amber-50/50' },
+                        { val: 'X', label: '✕ 不参加', color: 'peer-checked:bg-rose-600 peer-checked:text-white border-rose-300 text-rose-700 bg-rose-50/50' }
+                    ];
+
+                    options.forEach(opt => {
+                        const isChecked = curAnswer.status === opt.val ? 'checked' : '';
+                        const optHtml = `
+                            <label class="cursor-pointer">
+                                <input type="radio" name="${statusKey}" value="${opt.val}" ${isChecked} class="peer hidden">
+                                <div class="text-center py-2.5 px-1 rounded-xl border text-xs sm:text-sm font-extrabold shadow-sm tap-btn transition-all ${opt.color}">
+                                    ${opt.label}
+                                </div>
+                            </label>
+                        `;
+                        flexOptions.innerHTML += optHtml;
+                    });
+
+                    card.appendChild(flexOptions);
+
+                    const commentDiv = document.createElement('div');
+                    commentDiv.className = "mt-2";
+                    commentDiv.innerHTML = `
+                        <input type="text" id="${commentKey}" value="${curAnswer.comment || ''}" placeholder="連絡事項・不参加の理由等 (任意)" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    `;
+                    card.appendChild(commentDiv);
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        function applyBulkAnswer(type) {
+            if (!appState.currentActiveStudent) {
+                alert("部員名を選択してください");
+                return;
+            }
+
+            const activeMonth = appState.currentMonth;
+            const config = appState.monthConfigs[activeMonth];
+            const [year, month] = activeMonth.split('-').map(Number);
+
+            config.days.forEach(dayObj => {
+                if (dayObj.isOff) return;
+                const radios = document.getElementsByName(`day-status-${dayObj.day}`);
+                if (!radios || radios.length === 0) return;
+
+                const dateObj = new Date(year, month - 1, dayObj.day);
+                const dayNum = dateObj.getDay();
+
+                let targetVal = '';
+                if (type === 'O') targetVal = 'O';
+                else if (type === 'X') targetVal = 'X';
+                else if (type === 'O_WEEKDAY') {
+                    targetVal = (dayNum >= 1 && dayNum <= 5) ? 'O' : 'X';
+                }
+
+                radios.forEach(r => {
+                    r.checked = (r.value === targetVal);
+                });
+            });
+
+            showToast("一括選択を適用しました");
+        }
+
+        function saveStudentSchedule() {
+            const studentName = appState.currentActiveStudent;
+            if (!studentName) {
+                alert("部員名を選択してから送信してください");
+                return;
+            }
+
+            const activeMonth = appState.currentMonth;
+            const config = appState.monthConfigs[activeMonth];
+
+            if (!appState.answers[activeMonth]) appState.answers[activeMonth] = {};
+            if (!appState.answers[activeMonth][studentName]) appState.answers[activeMonth][studentName] = {};
+
+            config.days.forEach(dayObj => {
+                if (!dayObj.isOff) {
+                    const radios = document.getElementsByName(`day-status-${dayObj.day}`);
+                    let selectedVal = '';
+                    radios.forEach(r => { if (r.checked) selectedVal = r.value; });
+
+                    const commentEl = document.getElementById(`day-comment-${dayObj.day}`);
+                    const commentVal = commentEl ? commentEl.value : '';
+
+                    appState.answers[activeMonth][studentName][dayObj.day] = {
+                        status: selectedVal,
+                        comment: commentVal
+                    };
+                }
+            });
+
+            saveAppState();
+            showToast(`${studentName} さんの回答を送信・保存しました！`);
+        }
+
+        function checkEmergencyWindow() {
+            const now = new Date();
+            const hour = now.getHours();
+            // 20:00 - 07:00 window active
+            const isUrgentTime = (hour >= 20 || hour < 7);
+            const banner = document.getElementById('emergency-banner');
+
+            if (isUrgentTime) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function openEmergencyModal() {
+            renderStudentView();
+            document.getElementById('emergency-modal').classList.remove('hidden');
+        }
+
+        function closeEmergencyModal() {
+            document.getElementById('emergency-modal').classList.add('hidden');
+        }
+
+        function handleEmergencySubmit(e) {
+            e.preventDefault();
+            const stName = document.getElementById('emg-student-name').value;
+            const status = document.querySelector('input[name="emg-status"]:checked').value;
+            const reason = document.getElementById('emg-reason').value;
+
+            if (!stName) {
+                alert("部員名を選択してください");
+                return;
+            }
+
+            const logItem = {
+                timestamp: new Date().toLocaleString('ja-JP'),
+                studentName: stName,
+                status: status === 'X' ? '✕ 急遽不参加' : '△ 遅れて参加/未定',
+                reason: reason,
+                month: appState.currentMonth
+            };
+
+            appState.emergencyLogs.unshift(logItem);
+            saveAppState();
+
+            // Background EmailJS Trigger
+            const emailCfg = appState.emailConfig;
+            if (emailCfg.advisorEmail && emailCfg.publicKey && emailCfg.serviceId && emailCfg.templateId) {
+                try {
+                    emailjs.init(emailCfg.publicKey);
+                    emailjs.send(emailCfg.serviceId, emailCfg.templateId, {
+                        to_email: emailCfg.advisorEmail,
+                        student_name: stName,
+                        status: logItem.status,
+                        reason: reason,
+                        date_time: logItem.timestamp
+                    }).then(() => console.log("EmailJS Auto Direct Triggered")).catch(err => console.error("EmailJS Error:", err));
+                } catch (err) {
+                    console.error("EmailJS Exec Error:", err);
+                }
+            }
+
+            closeEmergencyModal();
+            showToast("緊急連絡を保存・送信しました");
+            renderDashboardView();
+        }
+
+        function renderDashboardView() {
+            const activeMonth = appState.currentMonth;
+            const config = appState.monthConfigs[activeMonth];
+            const table = document.getElementById('matrix-table');
+            if (!config) return;
+
+            const [year, month] = activeMonth.split('-').map(Number);
+            const answers = appState.answers[activeMonth] || {};
+
+            let headerHtml = `
+                <thead>
+                    <tr class="bg-slate-800 text-white font-bold sticky top-0 z-10">
+                        <th class="p-2.5 text-left border-b border-slate-700 min-w-[110px] sticky left-0 bg-slate-800">部員名</th>
+            `;
+
+            config.days.forEach(d => {
+                const dateObj = new Date(year, month - 1, d.day);
+                const dayNum = dateObj.getDay();
+                let dayColorClass = 'text-white';
+                if (dayNum === 0) dayColorClass = 'text-rose-300';
+                else if (dayNum === 6) dayColorClass = 'text-blue-300';
+
+                headerHtml += `
+                    <th class="p-2 text-center border-b border-slate-700 border-l border-slate-700/50 min-w-[36px] ${d.isOff ? 'bg-slate-700/50 text-slate-400' : ''}">
+                        <div class="${dayColorClass}">${d.day}</div>
+                    </th>
+                `;
+            });
+            headerHtml += `</tr></thead>`;
+
+            let bodyHtml = '<tbody>';
+            const students = appState.students;
+
+            if (students.length === 0) {
+                bodyHtml += `<tr><td colspan="${config.days.length + 1}" class="p-6 text-center text-slate-400">登録部員がいません。「顧問用設定」から部員を追加してください。</td></tr>`;
+            } else {
+                students.forEach((st, idx) => {
+                    const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50';
+                    bodyHtml += `<tr class="${rowBg} hover:bg-emerald-50/40">`;
+                    bodyHtml += `<td class="p-2.5 font-bold border-b border-slate-200 sticky left-0 ${rowBg} shadow-sm">${st}</td>`;
+
+                    const stAnswers = answers[st] || {};
+
+                    config.days.forEach(d => {
+                        if (d.isOff) {
+                            bodyHtml += `<td class="p-1 text-center border-b border-slate-200 border-l bg-slate-100 text-slate-300 font-bold">-</td>`;
+                        } else {
+                            const ans = stAnswers[d.day] || { status: '', comment: '' };
+                            let badge = '<span class="text-slate-300">•</span>';
+                            if (ans.status === 'O') badge = '<span class="text-emerald-600 font-black">〇</span>';
+                            else if (ans.status === 'TRIANGLE') badge = '<span class="text-amber-500 font-black">△</span>';
+                            else if (ans.status === 'X') badge = '<span class="text-rose-500 font-black">✕</span>';
+
+                            bodyHtml += `<td class="p-1 text-center border-b border-slate-200 border-l" title="${ans.comment || ''}">${badge}</td>`;
+                        }
+                    });
+
+                    bodyHtml += `</tr>`;
+                });
+            }
+            bodyHtml += '</tbody>';
+            table.innerHTML = headerHtml + bodyHtml;
+
+            document.getElementById('stat-total-students').textContent = `${students.length}名`;
+            
+            const todayDate = new Date();
+            const todayDay = todayDate.getDate();
+            let todayO = 0;
+            let todayTri = 0;
+
+            if (todayDate.getFullYear() === year && (todayDate.getMonth() + 1) === month) {
+                students.forEach(st => {
+                    const ans = (answers[st] && answers[st][todayDay]) ? answers[st][todayDay].status : '';
+                    if (ans === 'O') todayO++;
+                    if (ans === 'TRIANGLE') todayTri++;
+                });
+            }
+            document.getElementById('stat-today-o').textContent = `${todayO}名`;
+            document.getElementById('stat-today-triangle').textContent = `${todayTri}名`;
+
+            renderEmergencyLogs();
+        }
+
+        function renderEmergencyLogs() {
+            const container = document.getElementById('emergency-logs-container');
+            container.innerHTML = '';
+
+            const logs = appState.emergencyLogs || [];
+            document.getElementById('stat-emergency-count').textContent = `${logs.length}件`;
+
+            if (logs.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-center py-4">直前緊急連絡の記録はありません。</p>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = "bg-rose-50/80 border border-rose-200 rounded-xl p-2.5 flex justify-between items-start gap-2";
+                div.innerHTML = `
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-slate-800">${log.studentName}</span>
+                            <span class="text-xs px-2 py-0.5 rounded font-extrabold ${log.status.includes('不参加') ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'}">${log.status}</span>
+                            <span class="text-[10px] text-slate-400">${log.timestamp}</span>
+                        </div>
+                        <p class="text-xs text-slate-700 mt-1 font-medium">${log.reason}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function exportToCSV() {
+            const activeMonth = appState.currentMonth;
+            const config = appState.monthConfigs[activeMonth];
+            if (!config) return;
+
+            const answers = appState.answers[activeMonth] || {};
+            const students = appState.students;
+
+            let csvContent = `部員名`;
+            config.days.forEach(d => { csvContent += `,${d.day}日`; });
+            csvContent += `\n`;
+
+            students.forEach(st => {
+                csvContent += `"${st}"`;
+                const stAns = answers[st] || {};
+                config.days.forEach(d => {
+                    if (d.isOff) {
+                        csvContent += `,"OFF"`;
+                    } else {
+                        const ans = stAns[d.day] ? stAns[d.day].status : '';
+                        let symbol = '';
+                        if (ans === 'O') symbol = '〇';
+                        else if (ans === 'TRIANGLE') symbol = '△';
+                        else if (ans === 'X') symbol = '✕';
+                        csvContent += `,"${symbol}"`;
+                    }
+                });
+                csvContent += `\n`;
+            });
+
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `朝練回答集計_${activeMonth}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("CSVの出力が完了しました");
+        }
+
+        function handlePinSubmit(e) {
+            e.preventDefault();
+            const pinVal = document.getElementById('admin-pin-input').value;
+            const errorMsg = document.getElementById('pin-error-msg');
+
+            if (pinVal === CONSTANTS.PIN) {
+                appState.isAdminUnlocked = true;
+                errorMsg.classList.add('hidden');
+                document.getElementById('admin-pin-input').value = '';
+                renderAdminView();
+                showToast("顧問管理者として認証完了しました");
+            } else {
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function lockAdminPanel() {
+            appState.isAdminUnlocked = false;
+            renderAdminView();
+            showToast("管理者画面をロックしました");
+        }
+
+        function renderAdminView() {
+            const pinCard = document.getElementById('admin-pin-card');
+            const panel = document.getElementById('admin-panel-content');
+
+            if (!appState.isAdminUnlocked) {
+                pinCard.classList.remove('hidden');
+                panel.classList.add('hidden');
+                return;
+            }
+
+            pinCard.classList.add('hidden');
+            panel.classList.remove('hidden');
+
+            // 1. Render Registered Students with Delete button
+            const stContainer = document.getElementById('admin-student-list');
+            stContainer.innerHTML = '';
+
+            if (appState.students.length === 0) {
+                stContainer.innerHTML = '<p class="text-xs text-slate-400 col-span-full py-2">登録されている部員はいません</p>';
+            } else {
+                appState.students.forEach(st => {
+                    const pill = document.createElement('div');
+                    pill.className = "bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between";
+                    pill.innerHTML = `
+                        <span class="font-bold text-xs text-slate-800">${st}</span>
+                        <button onclick="deleteStudent('${st}')" class="text-rose-600 hover:text-rose-800 text-xs px-2 py-1 rounded-lg hover:bg-rose-50 tap-btn" title="部員削除">
+                            <i class="fa-solid fa-trash-can"></i> 削除
+                        </button>
+                    `;
+                    stContainer.appendChild(pill);
+                });
+            }
+
+            // 2. Render Day Configurations
+            const activeMonth = appState.currentMonth;
+            const config = appState.monthConfigs[activeMonth];
+            const daysContainer = document.getElementById('admin-days-config-list');
+            daysContainer.innerHTML = '';
+
+            if (config) {
+                const [year, month] = activeMonth.split('-').map(Number);
+
+                config.days.forEach(d => {
+                    const dateObj = new Date(year, month - 1, d.day);
+                    const dayNum = dateObj.getDay();
+                    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+                    const row = document.createElement('div');
+                    row.className = `p-2.5 rounded-xl border text-xs flex flex-wrap items-center justify-between gap-2 ${d.isOff ? 'bg-slate-100 border-slate-200 opacity-60' : 'bg-white border-slate-200'}`;
+
+                    row.innerHTML = `
+                        <div class="font-bold w-16">
+                            ${month}/${d.day} (${dayNames[dayNum]})
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center space-x-1 cursor-pointer">
+                                <input type="checkbox" onchange="toggleDayOff('${activeMonth}', ${d.day}, this.checked)" ${d.isOff ? 'checked' : ''} class="rounded text-rose-600">
+                                <span class="font-bold ${d.isOff ? 'text-rose-600' : 'text-slate-600'}">休練(OFF)</span>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center space-x-2 ${d.isOff ? 'pointer-events-none opacity-40' : ''}">
+                            <input type="text" value="${d.location}" onchange="updateDayLocation('${activeMonth}', ${d.day}, this.value)" placeholder="場所" class="w-24 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold">
+                            <input type="time" value="${d.startTime}" onchange="updateDayTime('${activeMonth}', ${d.day}, 'startTime', this.value)" class="bg-slate-50 border border-slate-300 rounded-lg px-1.5 py-1 text-xs font-mono">
+                            <span>〜</span>
+                            <input type="time" value="${d.endTime}" onchange="updateDayTime('${activeMonth}', ${d.day}, 'endTime', this.value)" class="bg-slate-50 border border-slate-300 rounded-lg px-1.5 py-1 text-xs font-mono">
+                        </div>
+                    `;
+                    daysContainer.appendChild(row);
+                });
+            }
+
+            // 3. Load Firebase Config Fields
+            document.getElementById('fb-database-url').value = appState.firebaseConfig.databaseURL || '';
+            document.getElementById('fb-api-key').value = appState.firebaseConfig.apiKey || '';
+            document.getElementById('fb-project-id').value = appState.firebaseConfig.projectId || '';
+
+            // 4. Load Email JS Config Inputs
+            document.getElementById('emailjs-advisor-mail').value = appState.emailConfig.advisorEmail || '';
+            document.getElementById('emailjs-public-key').value = appState.emailConfig.publicKey || '';
+            document.getElementById('emailjs-service-id').value = appState.emailConfig.serviceId || '';
+            document.getElementById('emailjs-template-id').value = appState.emailConfig.templateId || '';
+        }
+
+        function deleteStudent(stName) {
+            if (confirm(`部員「${stName}」を削除しますか？`)) {
+                appState.students = appState.students.filter(s => s !== stName);
+                if (appState.currentActiveStudent === stName) {
+                    appState.currentActiveStudent = '';
+                }
+                saveAppState();
+                renderStudentView();
+                renderDashboardView();
+                renderAdminView();
+                showToast(`部員「${stName}」を削除しました`);
+            }
+        }
+
+        function toggleDayOff(monthStr, dayNum, isChecked) {
+            const dayObj = appState.monthConfigs[monthStr].days.find(d => d.day === dayNum);
+            if (dayObj) {
+                dayObj.isOff = isChecked;
+                saveAppState();
+                renderStudentView();
+                renderDashboardView();
+                renderAdminView();
+            }
+        }
+
+        function updateDayLocation(monthStr, dayNum, locVal) {
+            const dayObj = appState.monthConfigs[monthStr].days.find(d => d.day === dayNum);
+            if (dayObj) {
+                dayObj.location = locVal;
+                saveAppState();
+            }
+        }
+
+        function updateDayTime(monthStr, dayNum, field, timeVal) {
+            const dayObj = appState.monthConfigs[monthStr].days.find(d => d.day === dayNum);
+            if (dayObj) {
+                dayObj[field] = timeVal;
+                saveAppState();
+            }
+        }
+
+        function applyBatchTimes() {
+            const startTime = document.getElementById('batch-start-time').value;
+            const endTime = document.getElementById('batch-end-time').value;
+            const activeMonth = appState.currentMonth;
+
+            appState.monthConfigs[activeMonth].days.forEach(d => {
+                d.startTime = startTime;
+                d.endTime = endTime;
+            });
+
+            saveAppState();
+            renderAdminView();
+            renderStudentView();
+            showToast("時間を一括変更しました");
+        }
+
+        function applyBatchDayOff() {
+            const checkboxes = document.querySelectorAll('.batch-day-off-chk:checked');
+            const selectedDayNums = Array.from(checkboxes).map(cb => Number(cb.value));
+
+            if (selectedDayNums.length === 0) {
+                alert("一括OFFに設定する曜日を選択してください");
+                return;
+            }
+
+            const activeMonth = appState.currentMonth;
+            const [year, month] = activeMonth.split('-').map(Number);
+
+            appState.monthConfigs[activeMonth].days.forEach(d => {
+                const dateObj = new Date(year, month - 1, d.day);
+                const dayOfWeek = dateObj.getDay();
+                if (selectedDayNums.includes(dayOfWeek)) {
+                    d.isOff = true;
+                }
+            });
+
+            saveAppState();
+            renderAdminView();
+            renderStudentView();
+            renderDashboardView();
+            showToast("選択曜日を一括OFFに設定しました");
+        }
+
+        function saveFirebaseConfig() {
+            appState.firebaseConfig = {
+                databaseURL: document.getElementById('fb-database-url').value.trim(),
+                apiKey: document.getElementById('fb-api-key').value.trim(),
+                projectId: document.getElementById('fb-project-id').value.trim()
+            };
+            saveAppState();
+            initFirebase();
+            showToast("クラウド同期設定を保存しました");
+        }
+
+        function clearFirebaseConfig() {
+            appState.firebaseConfig = { databaseURL: '', apiKey: '', projectId: '' };
+            isFirebaseConnected = false;
+            saveAppState();
+            document.getElementById('sync-status-badge').className = "text-[10px] bg-emerald-900/80 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/50 flex items-center gap-1 font-normal";
+            document.getElementById('sync-status-badge').children[0].className = "w-1.5 h-1.5 rounded-full bg-slate-400 inline-block";
+            document.getElementById('sync-status-text').textContent = "ローカル動作中";
+            renderAdminView();
+            showToast("クラウド同期を解除しました");
+        }
+
+        function saveEmailConfig() {
+            appState.emailConfig = {
+                advisorEmail: document.getElementById('emailjs-advisor-mail').value.trim(),
+                publicKey: document.getElementById('emailjs-public-key').value.trim(),
+                serviceId: document.getElementById('emailjs-service-id').value.trim(),
+                templateId: document.getElementById('emailjs-template-id').value.trim()
+            };
+            saveAppState();
+            showToast("メール送信設定を保存しました");
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toast-message');
+            const toastText = document.getElementById('toast-text');
+            toastText.textContent = text;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 2500);
+        }
     </script>
 </body>
 </html>
