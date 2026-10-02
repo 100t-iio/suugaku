@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三角関数マスター - フラッシュカード & 単位円解説</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- KaTeX for Math typesetting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .katex-display {
+      margin: 0.5em 0 !important;
+    }
+    
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-option {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-option:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="w-full border-b border-slate-800 bg-slate-950/70 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-sky-500/10 text-sky-400 rounded-xl border border-sky-500/20">
+          <i data-lucide="compass" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+            三角関数マスター
+          </h1>
+          <p class="text-xs text-slate-400">0 〜 2π (sin, cos, tan)</p>
+        </div>
+      </div>
+      
+      <div id="header-stats" class="hidden flex items-center space-x-3 text-xs font-medium">
+        <div class="bg-slate-800/90 px-3 py-1.5 rounded-lg border border-slate-700/60 flex items-center gap-1.5">
+          <i data-lucide="clock" class="w-4 h-4 text-sky-400"></i>
+          <span id="timer-text" class="font-mono text-sm">00:00</span>
+        </div>
+        <div class="bg-slate-800/90 px-3 py-1.5 rounded-lg border border-slate-700/60 flex items-center gap-1.5">
+          <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
+          <span id="score-text" class="text-sm font-bold">0/15</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col justify-center">
+
+    <!-- START SCREEN -->
+    <section id="start-screen" class="glass-panel rounded-2xl p-6 md:p-10 text-center shadow-2xl my-auto">
+      <div class="inline-flex p-4 bg-sky-500/10 rounded-full text-sky-400 mb-6 border border-sky-500/20">
+        <i data-lucide="sparkles" class="w-12 h-12"></i>
+      </div>
+      <h2 class="text-2xl md:text-3xl font-extrabold mb-3 text-white">三角関数 フラッシュカード</h2>
+      <p class="text-slate-300 max-w-lg mx-auto text-sm md:text-base leading-relaxed mb-8">
+        <span class="text-sky-400 font-semibold">0 から 2π</span> までの <span class="font-mono text-amber-300">sin, cos, tan</span> の値を素早く解答！解答後の単位円グラフィック解説で視覚的に感覚を身につけましょう。
+      </p>
+
+      <!-- Features grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left max-w-2xl mx-auto">
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <div class="text-sky-400 mb-2"><i data-lucide="shuffle" class="w-5 h-5"></i></div>
+          <div class="font-semibold text-sm mb-1 text-white">毎回15問ランダム</div>
+          <div class="text-xs text-slate-400">17種類の主要角×3関数からランダム出題。何回でもトライ！</div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <div class="text-emerald-400 mb-2"><i data-lucide="pie-chart" class="w-5 h-5"></i></div>
+          <div class="font-semibold text-sm mb-1 text-white">単位円図示解説</div>
+          <div class="text-xs text-slate-400">解答後に象限・座標・直角三角形・接線をCanvasで正確に描画。</div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <div class="text-indigo-400 mb-2"><i data-lucide="brain-circuit" class="w-5 h-5"></i></div>
+          <div class="font-semibold text-sm mb-1 text-white">弱点・象限別分析</div>
+          <div class="text-xs text-slate-400">関数別・象限別の得手不得手を分析しフィードバック。</div>
+        </div>
+      </div>
+
+      <!-- High Score badge -->
+      <div id="best-record-badge" class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300 mb-8">
+        <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+        <span>自己ベスト: <strong id="best-score" class="text-amber-400 font-bold">15/15</strong> (<span id="best-time">00:45</span>)</span>
+      </div>
+
+      <div>
+        <button id="btn-start" class="w-full md:w-auto px-10 py-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-lg rounded-xl shadow-lg shadow-sky-500/20 transform transition active:scale-95 flex items-center justify-center gap-2 mx-auto">
+          <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+          <span>トレーニングを開始（15問）</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- QUIZ SCREEN -->
+    <section id="quiz-screen" class="hidden flex-1 flex flex-col justify-center my-auto py-2">
+      <!-- Progress bar -->
+      <div class="w-full bg-slate-800 rounded-full h-2.5 mb-6 overflow-hidden border border-slate-700/50">
+        <div id="progress-bar" class="bg-gradient-to-r from-sky-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Problem Card (No quadrant hints displayed here) -->
+        <div id="question-card-container" class="glass-panel rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden transition-all duration-300">
+          
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-sky-400 border border-slate-700">
+              問題 <span id="current-q-num">1</span> / 15
+            </span>
+          </div>
+
+          <!-- LaTeX Math Question -->
+          <div class="text-center py-6">
+            <p class="text-xs text-slate-400 uppercase tracking-widest mb-3">三角関数の値を答えてください</p>
+            <div id="math-question" class="text-4xl md:text-5xl font-extrabold min-h-[70px] flex items-center justify-center text-white">
+              <!-- Rendered by KaTeX -->
+            </div>
+          </div>
+
+          <!-- Options Grid (4 choices) -->
+          <div id="options-grid" class="grid grid-cols-2 gap-3 md:gap-4 mt-2">
+            <!-- Option buttons populated by JS -->
+          </div>
+        </div>
+
+        <!-- Explanation Card (Shown after answering, contains Quadrant info & Canvas graphic) -->
+        <div id="explanation-panel" class="hidden glass-panel rounded-2xl p-6 shadow-2xl border-2 border-slate-700 animate-fade-in">
+          <div class="flex flex-col md:flex-row gap-6 items-center">
+            
+            <!-- Unit Circle Canvas Container -->
+            <div class="flex flex-col items-center shrink-0">
+              <div class="relative bg-slate-950 p-3 rounded-2xl border border-slate-800 shadow-inner flex items-center justify-center">
+                <canvas id="unit-circle-canvas" class="w-[260px] h-[260px] block"></canvas>
+              </div>
+              <div class="flex items-center gap-4 text-[11px] text-slate-400 mt-2">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> sin (y)</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span> cos (x)</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span> tan (傾き)</span>
+              </div>
+            </div>
+
+            <!-- Explanation Content -->
+            <div class="flex-1 flex flex-col justify-between w-full h-full">
+              <div>
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <div id="feedback-result-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold">
+                    <!-- Correct / Incorrect badge -->
+                  </div>
+
+                  <!-- Quadrant Info Displayed Here in Explanation -->
+                  <span id="exp-quadrant-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    <!-- e.g. 第2象限 (135°) -->
+                  </span>
+                </div>
+                
+                <h3 class="text-base font-bold mb-2 text-white flex items-center gap-2">
+                  <i data-lucide="book-open" class="w-4 h-4 text-sky-400"></i> 解説
+                </h3>
+                <div id="exp-body" class="text-sm text-slate-200 space-y-2.5 leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                  <!-- Detailed text rendered by JS -->
+                </div>
+              </div>
+
+              <!-- Next button -->
+              <div class="mt-6 pt-4 border-t border-slate-800/80 flex justify-end">
+                <button id="btn-next" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm active:scale-95">
+                  <span>次の問題へ</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULT SCREEN -->
+    <section id="result-screen" class="hidden glass-panel rounded-2xl p-6 md:p-10 shadow-2xl my-auto">
+      <div class="text-center mb-8">
+        <div id="rank-icon-wrapper" class="inline-flex p-4 rounded-full bg-amber-500/10 text-amber-400 mb-4 border border-amber-500/20">
+          <i data-lucide="trophy" class="w-12 h-12"></i>
+        </div>
+        <h2 id="rank-title" class="text-2xl md:text-3xl font-black mb-1 text-white">三角関数マスター！</h2>
+        <p class="text-slate-400 text-sm">15問のフラッシュカードセッション完了</p>
+      </div>
+
+      <!-- Stats Cards Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 text-center">
+          <span class="text-xs text-slate-400 block mb-1">正答率</span>
+          <span id="res-accuracy" class="text-2xl md:text-3xl font-extrabold text-sky-400">100%</span>
+        </div>
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 text-center">
+          <span class="text-xs text-slate-400 block mb-1">正解数</span>
+          <span id="res-score" class="text-2xl md:text-3xl font-extrabold text-emerald-400">15 / 15</span>
+        </div>
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 text-center">
+          <span class="text-xs text-slate-400 block mb-1">タイム</span>
+          <span id="res-time" class="text-2xl md:text-3xl font-extrabold font-mono text-indigo-400">00:42</span>
+        </div>
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 text-center">
+          <span class="text-xs text-slate-400 block mb-1">1問平均</span>
+          <span id="res-avg-time" class="text-2xl md:text-3xl font-extrabold font-mono text-amber-400">2.8s</span>
+        </div>
+      </div>
+
+      <!-- Analysis Card -->
+      <div class="bg-slate-800/50 border border-slate-700/60 rounded-xl p-5 mb-8">
+        <div class="flex items-center gap-2 mb-3 text-sky-400 font-bold text-sm">
+          <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+          <span>得意・象限別傾向分析レポート</span>
+        </div>
+        <div id="analysis-text" class="text-sm text-slate-300 leading-relaxed space-y-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Incorrect Review Section -->
+      <div id="incorrect-review-section" class="mb-8 hidden">
+        <h4 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i>
+          <span>ミスした問題の振り返り</span>
+        </h4>
+        <div id="incorrect-list" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Retry Action Button -->
+      <div class="flex justify-center">
+        <button id="btn-retry" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
+          <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+          <span>もう一度挑戦する</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="w-full text-center py-4 text-xs text-slate-500 border-t border-slate-800/60">
+    <p>三角関数 フラッシュカード &bull; HTML5 Canvas 単位円ビジュアル解説</p>
+  </footer>
+
+  <script>
+    // --- MATHEMATICAL DATA DEFINITIONS ---
+
+    // 17 Main angles from 0 to 2π
+    const ANGLES = [
+      { id: '0', text: '0', tex: '0', val: 0, quad: 'axis', desc: 'x軸の正の向き (0°)' },
+      { id: 'pi_6', text: 'π/6', tex: '\\frac{\\pi}{6}', val: Math.PI / 6, quad: '1', desc: '第1象限 (30°)' },
+      { id: 'pi_4', text: 'π/4', tex: '\\frac{\\pi}{4}', val: Math.PI / 4, quad: '1', desc: '第1象限 (45°)' },
+      { id: 'pi_3', text: 'π/3', tex: '\\frac{\\pi}{3}', val: Math.PI / 3, quad: '1', desc: '第1象限 (60°)' },
+      { id: 'pi_2', text: 'π/2', tex: '\\frac{\\pi}{2}', val: Math.PI / 2, quad: 'axis', desc: 'y軸の正の向き (90°)' },
+      { id: '2pi_3', text: '2π/3', tex: '\\frac{2\\pi}{3}', val: (2 * Math.PI) / 3, quad: '2', desc: '第2象限 (120°)' },
+      { id: '3pi_4', text: '3π/4', tex: '\\frac{3\\pi}{4}', val: (3 * Math.PI) / 4, quad: '2', desc: '第2象限 (135°)' },
+      { id: '5pi_6', text: '5π/6', tex: '\\frac{5\\pi}{6}', val: (5 * Math.PI) / 6, quad: '2', desc: '第2象限 (150°)' },
+      { id: 'pi', text: 'π', tex: '\\pi', val: Math.PI, quad: 'axis', desc: 'x軸の負の向き (180°)' },
+      { id: '7pi_6', text: '7π/6', tex: '\\frac{7\\pi}{6}', val: (7 * Math.PI) / 6, quad: '3', desc: '第3象限 (210°)' },
+      { id: '5pi_4', text: '5π/4', tex: '\\frac{5\\pi}{4}', val: (5 * Math.PI) / 4, quad: '3', desc: '第3象限 (225°)' },
+      { id: '4pi_3', text: '4π/3', tex: '\\frac{4\\pi}{3}', val: (4 * Math.PI) / 3, quad: '3', desc: '第3象限 (240°)' },
+      { id: '3pi_2', text: '3π/2', tex: '\\frac{3\\pi}{2}', val: (3 * Math.PI) / 2, quad: 'axis', desc: 'y軸の負の向き (270°)' },
+      { id: '5pi_3', text: '5π/3', tex: '\\frac{5\\pi}{3}', val: (5 * Math.PI) / 3, quad: '4', desc: '第4象限 (300°)' },
+      { id: '7pi_4', text: '7π/4', tex: '\\frac{7\\pi}{4}', val: (7 * Math.PI) / 4, quad: '4', desc: '第4象限 (315°)' },
+      { id: '11pi_6', text: '11π/6', tex: '\\frac{11\\pi}{6}', val: (11 * Math.PI) / 6, quad: '4', desc: '第4象限 (330°)' },
+      { id: '2pi', text: '2π', tex: '2\\pi', val: 2 * Math.PI, quad: 'axis', desc: 'x軸の正の向き (360°)' }
+    ];
+
+    // Standard Trig Values
+    const VALS = {
+      ZERO:          { id: '0', tex: '0', val: 0 },
+      ONE:           { id: '1', tex: '1', val: 1 },
+      NEG_ONE:       { id: '-1', tex: '-1', val: -1 },
+      HALF:          { id: '1/2', tex: '\\frac{1}{2}', val: 0.5 },
+      NEG_HALF:      { id: '-1/2', tex: '-\\frac{1}{2}', val: -0.5 },
+      SQRT2_2:       { id: '1/sqrt2', tex: '\\frac{1}{\\sqrt{2}}', val: 1 / Math.sqrt(2) },
+      NEG_SQRT2_2:   { id: '-1/sqrt2', tex: '-\\frac{1}{\\sqrt{2}}', val: -1 / Math.sqrt(2) },
+      SQRT3_2:       { id: 'sqrt3/2', tex: '\\frac{\\sqrt{3}}{2}', val: Math.sqrt(3) / 2 },
+      NEG_SQRT3_2:   { id: '-sqrt3/2', tex: '-\\frac{\\sqrt{3}}{2}', val: -Math.sqrt(3) / 2 },
+      ONE_SQRT3:     { id: '1/sqrt3', tex: '\\frac{1}{\\sqrt{3}}', val: 1 / Math.sqrt(3) },
+      NEG_ONE_SQRT3: { id: '-1/sqrt3', tex: '-\\frac{1}{\\sqrt{3}}', val: -1 / Math.sqrt(3) },
+      SQRT3:         { id: 'sqrt3', tex: '\\sqrt{3}', val: Math.sqrt(3) },
+      NEG_SQRT3:     { id: '-sqrt3', tex: '-\\sqrt{3}', val: -Math.sqrt(3) },
+      UNDEF:         { id: 'undef', tex: '\\text{なし}', val: null }
+    };
+
+    const ALL_VAL_LIST = Object.values(VALS);
+
+    // Map angle to sin, cos, tan values
+    const TRIG_TABLE = {
+      '0':       { sin: VALS.ZERO,        cos: VALS.ONE,         tan: VALS.ZERO },
+      'pi_6':    { sin: VALS.HALF,        cos: VALS.SQRT3_2,    tan: VALS.ONE_SQRT3 },
+      'pi_4':    { sin: VALS.SQRT2_2,     cos: VALS.SQRT2_2,     tan: VALS.ONE },
+      'pi_3':    { sin: VALS.SQRT3_2,     cos: VALS.HALF,        tan: VALS.SQRT3 },
+      'pi_2':    { sin: VALS.ONE,         cos: VALS.ZERO,        tan: VALS.UNDEF },
+      '2pi_3':   { sin: VALS.SQRT3_2,     cos: VALS.NEG_HALF,    tan: VALS.NEG_SQRT3 },
+      '3pi_4':   { sin: VALS.SQRT2_2,     cos: VALS.NEG_SQRT2_2, tan: VALS.NEG_ONE },
+      '5pi_6':   { sin: VALS.HALF,        cos: VALS.NEG_SQRT3_2, tan: VALS.NEG_ONE_SQRT3 },
+      'pi':      { sin: VALS.ZERO,        cos: VALS.NEG_ONE,     tan: VALS.ZERO },
+      '7pi_6':   { sin: VALS.NEG_HALF,    cos: VALS.NEG_SQRT3_2, tan: VALS.ONE_SQRT3 },
+      '5pi_4':   { sin: VALS.NEG_SQRT2_2, cos: VALS.NEG_SQRT2_2, tan: VALS.ONE },
+      '4pi_3':   { sin: VALS.NEG_SQRT3_2, cos: VALS.NEG_HALF,    tan: VALS.SQRT3 },
+      '3pi_2':   { sin: VALS.NEG_ONE,     cos: VALS.ZERO,        tan: VALS.UNDEF },
+      '5pi_3':   { sin: VALS.NEG_SQRT3_2, cos: VALS.HALF,        tan: VALS.NEG_SQRT3 },
+      '7pi_4':   { sin: VALS.NEG_SQRT2_2, cos: VALS.SQRT2_2,     tan: VALS.NEG_ONE },
+      '11pi_6':  { sin: VALS.NEG_HALF,    cos: VALS.SQRT3_2,    tan: VALS.NEG_ONE_SQRT3 },
+      '2pi':     { sin: VALS.ZERO,        cos: VALS.ONE,         tan: VALS.ZERO }
+    };
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let timerInterval = null;
+    let timeElapsed = 0;
+    let userAnswers = [];
+
+    const screens = {
+      start: document.getElementById('start-screen'),
+      quiz: document.getElementById('quiz-screen'),
+      result: document.getElementById('result-screen')
+    };
+
+    const headerStats = document.getElementById('header-stats');
+    const timerText = document.getElementById('timer-text');
+    const scoreText = document.getElementById('score-text');
+    const progressBar = document.getElementById('progress-bar');
+
+    function generateQuestionSet(total = 15) {
+      const pool = [];
+      const funcs = ['sin', 'cos', 'tan'];
+
+      ANGLES.forEach(angle => {
+        funcs.forEach(func => {
+          pool.push({
+            angle: angle,
+            func: func,
+            correctVal: TRIG_TABLE[angle.id][func]
+          });
+        });
+      });
+
+      // Shuffle
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      const selected = pool.slice(0, total);
+
+      return selected.map(q => {
+        const options = generateOptions(q.func, q.correctVal);
+        return {
+          ...q,
+          options: options
+        };
+      });
+    }
+
+    function generateOptions(func, correctVal) {
+      const options = [correctVal];
+      let candidates = ALL_VAL_LIST.filter(v => v.id !== correctVal.id);
+
+      if (func === 'tan') {
+        const tanPreferred = [VALS.ZERO, VALS.ONE, VALS.NEG_ONE, VALS.SQRT3, VALS.NEG_SQRT3, VALS.ONE_SQRT3, VALS.NEG_ONE_SQRT3, VALS.UNDEF];
+        candidates = candidates.sort((a, b) => {
+          const aPref = tanPreferred.includes(a) ? -1 : 1;
+          const bPref = tanPreferred.includes(b) ? -1 : 1;
+          return aPref - bPref;
+        });
+      } else {
+        candidates = candidates.filter(v => v.id !== VALS.UNDEF.id && v.id !== VALS.SQRT3.id && v.id !== VALS.NEG_SQRT3.id);
+      }
+
+      candidates = candidates.sort(() => Math.random() - 0.5);
+      
+      for (let i = 0; i < candidates.length && options.length < 4; i++) {
+        if (!options.some(o => o.id === candidates[i].id)) {
+          options.push(candidates[i]);
+        }
+      }
+
+      return options.sort(() => Math.random() - 0.5);
+    }
+
+    // --- CANVAS UNIT CIRCLE GRAPHIC RENDERER ---
+    function drawUnitCircle(canvasId, angleObj, funcType, correctVal) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      
+      // Fixed size with DPR high resolution scaling
+      const displaySize = 260;
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = displaySize * dpr;
+      canvas.height = displaySize * dpr;
+      
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      const w = displaySize;
+      const h = displaySize;
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = 90; // Unit circle radius in px
+
+      // Clear Canvas
+      ctx.clearRect(0, 0, w, h);
+
+      // Background grid dot pattern (subtle)
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, w, h);
+
+      // 1. Draw X & Y Axes
+      ctx.strokeStyle = '#475569'; // slate-600
+      ctx.lineWidth = 1.5;
+
+      // X-Axis
+      ctx.beginPath();
+      ctx.moveTo(15, cy);
+      ctx.lineTo(w - 15, cy);
+      ctx.stroke();
+
+      // X Arrow Head
+      ctx.fillStyle = '#475569';
+      ctx.beginPath();
+      ctx.moveTo(w - 12, cy - 4);
+      ctx.lineTo(w - 4, cy);
+      ctx.lineTo(w - 12, cy + 4);
+      ctx.fill();
+
+      // Y-Axis
+      ctx.beginPath();
+      ctx.moveTo(cx, h - 15);
+      ctx.lineTo(cx, 15);
+      ctx.stroke();
+
+      // Y Arrow Head
+      ctx.beginPath();
+      ctx.moveTo(cx - 4, 12);
+      ctx.lineTo(cx, 4);
+      ctx.lineTo(cx + 4, 12);
+      ctx.fill();
+
+      // Labels O, x, y, 1, -1
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('x', w - 12, cy - 8);
+      ctx.fillText('y', cx + 8, 14);
+      ctx.fillText('O', cx - 12, cy + 14);
+
+      // Ticks
+      ctx.fillText('1', cx + r - 3, cy + 14);
+      ctx.fillText('-1', cx - r - 12, cy + 14);
+      ctx.fillText('1', cx + 6, cy - r + 4);
+      ctx.fillText('-1', cx + 6, cy + r + 4);
+
+      // 2. Unit Circle
+      ctx.strokeStyle = '#64748b'; // slate-500
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const theta = angleObj.val;
+      const px = cx + r * Math.cos(theta);
+      const py = cy - r * Math.sin(theta); // Canvas Y inverted
+
+      // 3. Sector / Arc for Angle θ
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.18)'; // sky fill
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, Math.min(r * 0.35, 28), 0, -theta, true);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Label θ near arc
+      const midAngle = theta / 2;
+      const labelR = 36;
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText('θ', cx + labelR * Math.cos(midAngle) - 3, cy - labelR * Math.sin(midAngle) + 4);
+
+      // 4. Function-specific graphic highlights
+      if (funcType === 'sin') {
+        // Line from P to Y-axis
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.5)'; // rose
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(cx, py);
+        ctx.stroke();
+
+        // Right triangle vertical leg
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, cy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Bold Y-axis segment for sin(θ)
+        ctx.strokeStyle = '#f43f5e'; // rose-500
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx, py);
+        ctx.stroke();
+
+      } else if (funcType === 'cos') {
+        // Line from P to X-axis
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)'; // sky
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, cy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Bold X-axis segment for cos(θ)
+        ctx.strokeStyle = '#38bdf8'; // sky-400
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(px, cy);
+        ctx.stroke();
+
+      } else if (funcType === 'tan') {
+        if (correctVal.id === 'undef') {
+          // Undefined tan: Parallel to Y-axis warning
+          ctx.strokeStyle = '#ef4444'; // red
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(px, 15);
+          ctx.lineTo(px, h - 15);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillStyle = '#f87171';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.fillText('x = 0 (平行で交点なし)', cx + 10, cy + (py < cy ? 40 : -40));
+
+        } else {
+          // Tangent Line x = 1 (Canvas x = cx + r)
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx + r, 15);
+          ctx.lineTo(cx + r, h - 15);
+          ctx.stroke();
+
+          // Extension ray from origin to x = 1
+          const tanVal = Math.tan(theta);
+          const tanY = cy - r * tanVal;
+
+          ctx.strokeStyle = 'rgba(52, 211, 153, 0.6)'; // emerald
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + r, tanY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Highlight segment on x = 1 line
+          // Clamped drawing range for screen sanity
+          const clampedTanY = Math.max(15, Math.min(h - 15, tanY));
+          ctx.strokeStyle = '#10b981'; // emerald-500
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(cx + r, cy);
+          ctx.lineTo(cx + r, clampedTanY);
+          ctx.stroke();
+
+          // Intersection point T (1, tan θ)
+          ctx.fillStyle = '#10b981';
+          ctx.beginPath();
+          ctx.arc(cx + r, clampedTanY, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 5. Radius line OP
+      ctx.strokeStyle = '#f59e0b'; // amber-500
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+
+      // 6. Terminal Point P(x, y)
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Label P
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px sans-serif';
+      const cosVal = Math.cos(theta);
+      const sinVal = Math.sin(theta);
+      const pOffsetX = cosVal >= 0 ? 8 : -22;
+      const pOffsetY = sinVal >= 0 ? -8 : 16;
+      ctx.fillText('P', px + pOffsetX, py + pOffsetY);
+    }
+
+    // --- UI FLOW & SCREEN CONTROLLER ---
+
+    function showScreen(screenKey) {
+      Object.keys(screens).forEach(key => {
+        if (key === screenKey) {
+          screens[key].classList.remove('hidden');
+        } else {
+          screens[key].classList.add('hidden');
+        }
+      });
+
+      if (screenKey === 'quiz') {
+        headerStats.classList.remove('hidden');
+      } else {
+        headerStats.classList.add('hidden');
+      }
+    }
+
+    function startTimer() {
+      timeElapsed = 0;
+      timerText.textContent = '00:00';
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeElapsed++;
+        const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+        const secs = String(timeElapsed % 60).padStart(2, '0');
+        timerText.textContent = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    function startNewQuiz() {
+      currentQuestions = generateQuestionSet(15);
+      currentIndex = 0;
+      score = 0;
+      userAnswers = [];
+
+      scoreText.textContent = `0/15`;
+      showScreen('quiz');
+      startTimer();
+      renderCurrentQuestion();
+    }
+
+    function renderCurrentQuestion() {
+      const q = currentQuestions[currentIndex];
+      
+      // Update Progress
+      const progressPercent = ((currentIndex) / 15) * 100;
+      progressBar.style.width = `${progressPercent}%`;
+      document.getElementById('current-q-num').textContent = currentIndex + 1;
+
+      // Hide Explanation Panel
+      const expPanel = document.getElementById('explanation-panel');
+      expPanel.classList.add('hidden');
+
+      // Question Math via KaTeX (NO QUADRANT HINT HERE)
+      const mathElem = document.getElementById('math-question');
+      const latexStr = `\\${q.func}\\left(${q.angle.tex}\\right) = ?`;
+      katex.render(latexStr, mathElem, { displayMode: true, throwOnError: false });
+
+      // Options Grid
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+
+      q.options.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-option p-4 rounded-xl bg-slate-800 hover:bg-slate-700/90 border border-slate-700 text-white font-bold text-lg flex items-center justify-center min-h-[64px] shadow-sm';
+        
+        const optSpan = document.createElement('span');
+        katex.render(opt.tex, optSpan, { throwOnError: false });
+        btn.appendChild(optSpan);
+
+        btn.onclick = () => handleAnswerSelect(opt, q, btn);
+        grid.appendChild(btn);
+      });
+    }
+
+    function handleAnswerSelect(selectedOpt, question, selectedBtn) {
+      const allBtns = document.querySelectorAll('.btn-option');
+      allBtns.forEach(b => b.disabled = true);
+
+      const isCorrect = (selectedOpt.id === question.correctVal.id);
+      if (isCorrect) score++;
+
+      userAnswers.push({
+        question: question,
+        selectedOpt: selectedOpt,
+        isCorrect: isCorrect,
+        timeSpent: timeElapsed
+      });
+
+      scoreText.textContent = `${score}/15`;
+
+      // Highlight options
+      allBtns.forEach(b => {
+        if (b === selectedBtn) {
+          if (isCorrect) {
+            b.classList.remove('bg-slate-800', 'border-slate-700');
+            b.classList.add('bg-emerald-600/30', 'border-emerald-500', 'text-emerald-300', 'ring-2', 'ring-emerald-500');
+          } else {
+            b.classList.remove('bg-slate-800', 'border-slate-700');
+            b.classList.add('bg-rose-600/30', 'border-rose-500', 'text-rose-300', 'ring-2', 'ring-rose-500');
+          }
+        }
+      });
+
+      showExplanation(question, selectedOpt, isCorrect);
+    }
+
+    function showExplanation(question, selectedOpt, isCorrect) {
+      const expPanel = document.getElementById('explanation-panel');
+      const badge = document.getElementById('feedback-result-badge');
+      const expQuadBadge = document.getElementById('exp-quadrant-badge');
+      const expBody = document.getElementById('exp-body');
+
+      // Result Badge
+      if (isCorrect) {
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        badge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4"></i> 正解！`;
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30';
+        badge.innerHTML = `<i data-lucide="x-circle" class="w-4 h-4"></i> 不正解`;
+      }
+
+      // Display Quadrant Information Here (Moved from question card)
+      expQuadBadge.textContent = question.angle.desc;
+
+      const angle = question.angle;
+      const func = question.func;
+      const correctVal = question.correctVal;
+
+      let expHtml = '';
+
+      if (func === 'sin') {
+        expHtml = `
+          <p>角 <span class="katex-inline-angle"></span> の動径における単位円上の <strong>y 座標</strong> の値です。</p>
+          <p class="text-xs text-slate-300 mt-1">${angle.desc} の点 P では、y 座標は <span class="katex-inline-val"></span> となります。</p>
+        `;
+      } else if (func === 'cos') {
+        expHtml = `
+          <p>角 <span class="katex-inline-angle"></span> の動径における単位円上の <strong>x 座標</strong> の値です。</p>
+          <p class="text-xs text-slate-300 mt-1">${angle.desc} の点 P では、x 座標は <span class="katex-inline-val"></span> となります。</p>
+        `;
+      } else {
+        if (correctVal.id === 'undef') {
+          expHtml = `
+            <p>角 <span class="katex-inline-angle"></span> では動径が y 軸と平行（x ＝ 0）となり、直線 $x=1$ と交わらないため <strong>tan の値は定義されません（なし）</strong>。</p>
+          `;
+        } else {
+          expHtml = `
+            <p>角 <span class="katex-inline-angle"></span> の動径の <strong>傾き $\\left(\\frac{y}{x}\\right)$</strong> の値です。</p>
+            <p class="text-xs text-slate-300 mt-1">直線 $x=1$ と動径（またはその延長線）の交点の y 座標が <span class="katex-inline-val"></span> となります。</p>
+          `;
+        }
+      }
+
+      expBody.innerHTML = expHtml;
+
+      // Render inline math for explanation
+      const aSpan = expBody.querySelector('.katex-inline-angle');
+      if (aSpan) katex.render(angle.tex, aSpan, { throwOnError: false });
+
+      const vSpan = expBody.querySelector('.katex-inline-val');
+      if (vSpan) katex.render(correctVal.tex, vSpan, { throwOnError: false });
+
+      // Unhide Explanation Panel FIRST so Canvas container gets proper DOM metrics
+      expPanel.classList.remove('hidden');
+
+      // Request Animation Frame ensures layout pass is complete before canvas drawing
+      requestAnimationFrame(() => {
+        drawUnitCircle('unit-circle-canvas', angle, func, correctVal);
+      });
+
+      lucide.createIcons();
+
+      // Smooth scroll into view if necessary
+      expPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    document.getElementById('btn-next').onclick = () => {
+      currentIndex++;
+      if (currentIndex < 15) {
+        renderCurrentQuestion();
+      } else {
+        finishQuiz();
+      }
+    };
+
+    function finishQuiz() {
+      stopTimer();
+      showScreen('result');
+
+      const totalTime = timeElapsed;
+      const mins = String(Math.floor(totalTime / 60)).padStart(2, '0');
+      const secs = String(totalTime % 60).padStart(2, '0');
+      const timeStr = `${mins}:${secs}`;
+      const avgTime = (totalTime / 15).toFixed(1);
+      const accuracy = Math.round((score / 15) * 100);
+
+      document.getElementById('res-accuracy').textContent = `${accuracy}%`;
+      document.getElementById('res-score').textContent = `${score} / 15`;
+      document.getElementById('res-time').textContent = timeStr;
+      document.getElementById('res-avg-time').textContent = `${avgTime}s`;
+
+      const rankTitle = document.getElementById('rank-title');
+      const rankIconWrapper = document.getElementById('rank-icon-wrapper');
+
+      if (score === 15 && totalTime <= 45) {
+        rankTitle.textContent = '神速の三角関数マスター (SS)';
+        rankIconWrapper.className = 'inline-flex p-4 rounded-full bg-amber-500/20 text-amber-300 mb-4 border border-amber-500/30 ring-8 ring-amber-500/10';
+      } else if (score >= 13) {
+        rankTitle.textContent = '三角関数マスター (S)';
+        rankIconWrapper.className = 'inline-flex p-4 rounded-full bg-sky-500/20 text-sky-300 mb-4 border border-sky-500/30';
+      } else if (score >= 10) {
+        rankTitle.textContent = '三角関数エキスパート (A)';
+        rankIconWrapper.className = 'inline-flex p-4 rounded-full bg-indigo-500/20 text-indigo-300 mb-4 border border-indigo-500/30';
+      } else if (score >= 7) {
+        rankTitle.textContent = '三角関数チャレンジャー (B)';
+        rankIconWrapper.className = 'inline-flex p-4 rounded-full bg-emerald-500/20 text-emerald-300 mb-4 border border-emerald-500/30';
+      } else {
+        rankTitle.textContent = '基礎から復習しよう (C)';
+        rankIconWrapper.className = 'inline-flex p-4 rounded-full bg-slate-700 text-slate-300 mb-4 border border-slate-600';
+      }
+
+      saveBestRecord(score, totalTime, timeStr);
+      renderAnalysisReport();
+      renderIncorrectReviewList();
+      
+      lucide.createIcons();
+    }
+
+    function renderAnalysisReport() {
+      const container = document.getElementById('analysis-text');
+
+      const funcStats = { sin: { total: 0, correct: 0 }, cos: { total: 0, correct: 0 }, tan: { total: 0, correct: 0 } };
+      const quadStats = { '1': { total: 0, correct: 0 }, '2': { total: 0, correct: 0 }, '3': { total: 0, correct: 0 }, '4': { total: 0, correct: 0 }, 'axis': { total: 0, correct: 0 } };
+
+      userAnswers.forEach(ans => {
+        const f = ans.question.func;
+        const qd = ans.question.angle.quad;
+
+        funcStats[f].total++;
+        if (ans.isCorrect) funcStats[f].correct++;
+
+        quadStats[qd].total++;
+        if (ans.isCorrect) quadStats[qd].correct++;
+      });
+
+      let comments = [];
+
+      const weakestFunc = Object.keys(funcStats).reduce((a, b) => {
+        const rateA = funcStats[a].total ? funcStats[a].correct / funcStats[a].total : 1;
+        const rateB = funcStats[b].total ? funcStats[b].correct / funcStats[b].total : 1;
+        return rateA < rateB ? a : b;
+      });
+
+      if (score === 15) {
+        comments.push(`<p>🎉 <strong class="text-emerald-400">素晴らしい全問正解！</strong> sin, cos, tan 全ての関数と全象限の値を完璧に理解できています。</p>`);
+      } else {
+        if (weakestFunc === 'tan') {
+          comments.push(`<p>💡 <strong>tan（傾き）</strong>のミスが見られます。tanは動径の傾き（または $x=1$ での交点y座標）としてイメージすると確実です。</p>`);
+        } else if (weakestFunc === 'cos') {
+          comments.push(`<p>💡 <strong>cos（x座標）</strong>の符号に注意しましょう。第2・第3象限では $x < 0$（負の値）になります。</p>`);
+        } else if (weakestFunc === 'sin') {
+          comments.push(`<p>💡 <strong>sin（y座標）</strong>の符号に注意しましょう。第3・第4象限では $y < 0$（負の値）になります。</p>`);
+        }
+
+        const weakestQuad = Object.keys(quadStats).filter(k => k !== 'axis').reduce((a, b) => {
+          const rateA = quadStats[a].total ? quadStats[a].correct / quadStats[a].total : 1;
+          const rateB = quadStats[b].total ? quadStats[b].correct / quadStats[b].total : 1;
+          return rateA < rateB ? a : b;
+        });
+
+        if (quadStats[weakestQuad].total > 0 && (quadStats[weakestQuad].correct / quadStats[weakestQuad].total) < 1) {
+          comments.push(`<p>📍 特に <strong class="text-amber-400">第${weakestQuad}象限</strong> の角度で間違えやすい傾向があります。単位円で動径の向きを確認しましょう。</p>`);
+        }
+      }
+
+      container.innerHTML = comments.join('');
+    }
+
+    function renderIncorrectReviewList() {
+      const reviewSection = document.getElementById('incorrect-review-section');
+      const listContainer = document.getElementById('incorrect-list');
+      const incorrects = userAnswers.filter(a => !a.isCorrect);
+
+      if (incorrects.length === 0) {
+        reviewSection.classList.add('hidden');
+        return;
+      }
+
+      reviewSection.classList.remove('hidden');
+      listContainer.innerHTML = '';
+
+      incorrects.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'p-3 bg-slate-900/80 border border-slate-700/60 rounded-lg flex items-center justify-between text-xs md:text-sm';
+
+        const q = item.question;
+        const mathSpan = document.createElement('span');
+        mathSpan.className = 'font-bold text-white';
+        katex.render(`\\${q.func}\\left(${q.angle.tex}\\right)`, mathSpan, { throwOnError: false });
+
+        const ansContainer = document.createElement('div');
+        ansContainer.className = 'flex items-center gap-3';
+
+        const userAnsSpan = document.createElement('span');
+        userAnsSpan.className = 'text-rose-400 line-through';
+        userAnsSpan.innerHTML = `あなたの解答: `;
+        const userTex = document.createElement('span');
+        katex.render(item.selectedOpt.tex, userTex, { throwOnError: false });
+        userAnsSpan.appendChild(userTex);
+
+        const correctAnsSpan = document.createElement('span');
+        correctAnsSpan.className = 'text-emerald-400 font-bold';
+        correctAnsSpan.innerHTML = `正解: `;
+        const correctTex = document.createElement('span');
+        katex.render(q.correctVal.tex, correctTex, { throwOnError: false });
+        correctAnsSpan.appendChild(correctTex);
+
+        ansContainer.appendChild(userAnsSpan);
+        ansContainer.appendChild(correctAnsSpan);
+
+        row.appendChild(mathSpan);
+        row.appendChild(ansContainer);
+
+        listContainer.appendChild(row);
+      });
+    }
+
+    function saveBestRecord(score, totalTime, timeStr) {
+      const currentBestScore = parseInt(localStorage.getItem('trig_best_score') || '0', 10);
+      const currentBestTime = parseInt(localStorage.getItem('trig_best_time') || '999999', 10);
+
+      let isNewBest = false;
+      if (score > currentBestScore) {
+        isNewBest = true;
+      } else if (score === currentBestScore && totalTime < currentBestTime) {
+        isNewBest = true;
+      }
+
+      if (isNewBest) {
+        localStorage.setItem('trig_best_score', score);
+        localStorage.setItem('trig_best_time', totalTime);
+        localStorage.setItem('trig_best_time_str', timeStr);
+      }
+
+      updateBestRecordBadge();
+    }
+
+    function updateBestRecordBadge() {
+      const bestScore = localStorage.getItem('trig_best_score');
+      const bestTimeStr = localStorage.getItem('trig_best_time_str');
+      const badge = document.getElementById('best-record-badge');
+
+      if (bestScore !== null) {
+        document.getElementById('best-score').textContent = `${bestScore}/15`;
+        document.getElementById('best-time').textContent = bestTimeStr;
+        badge.classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('btn-start').onclick = startNewQuiz;
+    document.getElementById('btn-retry').onclick = startNewQuiz;
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const quizScreen = document.getElementById('quiz-screen');
+        const expPanel = document.getElementById('explanation-panel');
+        if (!quizScreen.classList.contains('hidden') && !expPanel.classList.contains('hidden')) {
+          document.getElementById('btn-next').click();
+        }
+      }
+    });
+
+    window.onload = function() {
+      lucide.createIcons();
+      updateBestRecordBadge();
+    };
+  </script>
+</body>
+</html>
