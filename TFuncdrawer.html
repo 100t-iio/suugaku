@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>単位円と三角関数の射影 (Sin, Cos, Tan)</title>
+    <title>単位円と三角関数のグラフ</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -13,18 +13,18 @@
                 extend: {
                     colors: {
                         brand: {
-                            dark: '#090d16',
-                            card: '#131a29',
-                            border: '#232f48',
-                            sin: '#06b6d4',      // Cyan for sin
-                            cos: '#f43f5e',      // Rose for cos
-                            tan: '#10b981',      // Emerald for tan
-                            pointP: '#f59e0b',   // Amber for Point P
+                            dark: '#080c14',
+                            card: '#0f172a',
+                            border: '#1e293b',
+                            sin: '#06b6d4',      // Cyan
+                            cos: '#f43f5e',      // Rose
+                            tan: '#10b981',      // Emerald
+                            pointP: '#f59e0b',   // Amber
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace']
                     }
                 }
             }
@@ -34,32 +34,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
         body {
-            background-color: #090d16;
+            background-color: #080c14;
             color: #f3f4f6;
             user-select: none;
         }
-        /* Custom Scrollbars */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #090d16;
+            background: #080c14;
         }
         ::-webkit-scrollbar-thumb {
-            background: #232f48;
+            background: #1e293b;
             border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #3b82f6;
         }
         .glass-panel {
-            background: rgba(19, 26, 41, 0.85);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        /* Custom Range Input */
+        /* Custom Range Slider */
         input[type=range] {
             -webkit-appearance: none;
             background: #1e293b;
@@ -81,42 +89,56 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased text-slate-200 bg-brand-dark pb-8">
+<body class="min-h-screen flex flex-col font-sans antialiased text-slate-200 bg-brand-dark pb-6">
 
-    <!-- Header Bar with PIN Lock Interface -->
-    <header class="w-full border-b border-brand-border/80 bg-brand-card/90 sticky top-0 z-30 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex flex-wrap items-center justify-between gap-3">
+    <!-- Header Bar -->
+    <header class="w-full border-b border-slate-800 bg-slate-900/90 sticky top-0 z-30 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
             
-            <!-- Title -->
+            <!-- App Title -->
             <div class="flex items-center space-x-3">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 via-rose-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                    <i class="fa-solid fa-chart-line text-white text-base"></i>
+                    <i class="fa-solid fa-chart-line text-white text-sm"></i>
                 </div>
                 <div>
                     <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                        単位円と三角関数の射影・傾き
+                        単位円と三角関数のグラフ
                     </h1>
-                    <p class="text-[11px] text-slate-400 hidden sm:block">Interactive Sin, Cos & Tan Wave Projections</p>
                 </div>
             </div>
 
-            <!-- PIN Code Verification Interface (No default 1728 watermark) -->
-            <div class="flex items-center space-x-2 bg-slate-900/90 p-1.5 rounded-xl border border-slate-700/70">
-                <div class="flex items-center px-2 text-xs font-mono text-slate-400">
-                    <i class="fa-solid fa-key mr-1.5 text-amber-400"></i>
-                    <span class="hidden md:inline">PIN:</span>
+            <!-- PIN Code Verification Interface -->
+            <div class="flex items-center space-x-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
+                <!-- Locked View Form -->
+                <div id="pinFormArea" class="flex items-center space-x-2">
+                    <div class="hidden sm:flex items-center px-2 text-xs font-mono text-slate-400">
+                        <i class="fa-solid fa-key mr-1.5 text-amber-400"></i>
+                        <span>PIN:</span>
+                    </div>
+                    <input id="pinInput" type="password" maxlength="6" placeholder="4桁のPINを入力" 
+                           class="w-28 sm:w-36 px-2.5 py-1 text-xs font-mono text-center rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-cyan-500 transition placeholder:text-slate-500">
+                    <button id="btnUnlock" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center space-x-1 shadow active:scale-95">
+                        <i class="fa-solid fa-lock-open text-[10px]"></i>
+                        <span>ロック解除</span>
+                    </button>
                 </div>
-                <input id="pinInput" type="password" maxlength="6" placeholder="4桁のPINを入力" 
-                       class="w-28 sm:w-32 px-2.5 py-1 text-xs font-mono text-center rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-cyan-500 transition placeholder:text-slate-500">
-                <button id="btnUnlock" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center space-x-1 shadow">
-                    <i class="fa-solid fa-lock-open text-[10px]"></i>
-                    <span>解除</span>
-                </button>
-                
+
+                <!-- Unlocked View Button -->
+                <div id="unlockedArea" class="hidden flex items-center space-x-2">
+                    <span class="text-xs font-semibold text-emerald-400 px-2 flex items-center space-x-1">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span class="hidden sm:inline">グラフ解除中</span>
+                    </span>
+                    <button id="btnLock" class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition flex items-center space-x-1 shadow active:scale-95">
+                        <i class="fa-solid fa-lock text-[10px]"></i>
+                        <span>ロック</span>
+                    </button>
+                </div>
+
                 <!-- Status Badge -->
                 <div id="statusBadge" class="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center space-x-1">
                     <i id="statusIcon" class="fa-solid fa-lock text-rose-400"></i>
-                    <span id="statusText" class="hidden sm:inline">グラフ非表示</span>
+                    <span id="statusText" class="hidden md:inline">グラフ非表示</span>
                 </div>
             </div>
 
@@ -127,117 +149,117 @@
 
         <!-- Function Mode Tabs (Sin / Cos / Tan) -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="flex space-x-1.5 sm:space-x-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
-                <button id="tabSin" class="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 bg-cyan-600 text-white shadow-lg shadow-cyan-600/30">
+            <div class="flex space-x-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+                <button id="tabSin" class="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 bg-cyan-600 text-white shadow-lg shadow-cyan-600/30">
                     <i class="fa-solid fa-arrows-up-down"></i>
-                    <span>y = sin(x)</span>
+                    <span>y = sin x</span>
                 </button>
-                <button id="tabCos" class="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-white">
+                <button id="tabCos" class="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 text-slate-400 hover:text-white">
                     <i class="fa-solid fa-arrows-left-right"></i>
-                    <span>y = cos(x)</span>
+                    <span>y = cos x</span>
                 </button>
-                <button id="tabTan" class="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-white">
+                <button id="tabTan" class="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 text-slate-400 hover:text-white">
                     <i class="fa-solid fa-slash-forward"></i>
-                    <span>y = tan(x)</span>
+                    <span>y = tan x</span>
                 </button>
             </div>
 
             <!-- Radian Only Indicator -->
-            <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs text-slate-300 font-mono">
+            <div class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono">
                 <i class="fa-solid fa-circle-notch text-cyan-400"></i>
-                <span>角度単位: 弧度法 (Rad)</span>
+                <span>角度単位: 弧度法 (Rad) 0 〜 4π</span>
             </div>
         </div>
 
-        <!-- Live Mathematical Numerical Dashboard -->
+        <!-- Dynamic Numerical Dashboard -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             
             <!-- Angle Theta -->
-            <div class="glass-panel p-3.5 rounded-2xl border border-amber-500/30 relative overflow-hidden">
+            <div class="glass-panel p-3 rounded-2xl border border-amber-500/30 relative overflow-hidden">
                 <div class="text-[11px] font-medium text-amber-400 flex items-center justify-between">
-                    <span>回転角 θ (Theta)</span>
+                    <span>回転角 θ</span>
                     <i class="fa-solid fa-compass text-amber-400"></i>
                 </div>
-                <div class="mt-1.5 flex items-baseline justify-between">
-                    <span id="valThetaRad" class="text-lg sm:text-2xl font-bold font-mono text-amber-300">0.00 rad</span>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="valThetaRad" class="text-base sm:text-xl font-bold font-mono text-amber-300">0.00 rad</span>
                     <span id="valThetaPi" class="text-xs font-mono text-slate-400">0.00 π</span>
                 </div>
             </div>
 
             <!-- Point P Coordinates -->
-            <div class="glass-panel p-3.5 rounded-2xl border border-indigo-500/30 relative overflow-hidden">
+            <div class="glass-panel p-3 rounded-2xl border border-indigo-500/30 relative overflow-hidden">
                 <div class="text-[11px] font-medium text-indigo-400 flex items-center justify-between">
                     <span>円周上の点 P(cos θ, sin θ)</span>
                     <i class="fa-solid fa-location-dot text-indigo-400"></i>
                 </div>
-                <div class="mt-1.5 flex items-baseline justify-between">
-                    <span id="valPointP" class="text-base sm:text-xl font-bold font-mono text-indigo-200">(1.00, 0.00)</span>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="valPointP" class="text-sm sm:text-lg font-bold font-mono text-indigo-200">(1.00, 0.00)</span>
                     <span class="text-[10px] text-slate-400">単位円</span>
                 </div>
             </div>
 
-            <!-- Focus Target (Py / Px / T) Dynamic Card -->
-            <div id="cardTarget" class="glass-panel p-3.5 rounded-2xl border border-cyan-500/30 relative overflow-hidden">
+            <!-- Active Target Metric -->
+            <div id="cardTarget" class="glass-panel p-3 rounded-2xl border border-cyan-500/30 relative overflow-hidden">
                 <div class="text-[11px] font-medium text-cyan-400 flex items-center justify-between">
                     <span id="lblTargetTitle">y軸射影 Py = sin(θ)</span>
                     <i id="iconTarget" class="fa-solid fa-arrows-up-down text-cyan-400"></i>
                 </div>
-                <div class="mt-1.5 flex items-baseline justify-between">
-                    <span id="valTarget" class="text-lg sm:text-2xl font-bold font-mono text-cyan-300">0.000</span>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="valTarget" class="text-base sm:text-xl font-bold font-mono text-cyan-300">0.000</span>
                     <span id="lblTargetSub" class="text-[10px] text-slate-400">高さ</span>
                 </div>
             </div>
 
             <!-- All Trig Values -->
-            <div class="glass-panel p-3.5 rounded-2xl border border-slate-700/50 relative overflow-hidden">
+            <div class="glass-panel p-3 rounded-2xl border border-slate-800 relative overflow-hidden">
                 <div class="text-[11px] font-medium text-slate-400 flex items-center justify-between">
-                    <span>三角関数の値</span>
+                    <span>三角関数</span>
                     <i class="fa-solid fa-calculator text-slate-400"></i>
                 </div>
-                <div class="mt-1 flex flex-col justify-center space-y-0.5 font-mono text-xs">
-                    <div class="flex justify-between"><span class="text-cyan-400 font-semibold">sin θ:</span> <span id="valSin">0.000</span></div>
-                    <div class="flex justify-between"><span class="text-rose-400 font-semibold">cos θ:</span> <span id="valCos">1.000</span></div>
-                    <div class="flex justify-between"><span class="text-emerald-400 font-semibold">tan θ:</span> <span id="valTan">0.000</span></div>
+                <div class="mt-0.5 flex flex-col justify-center space-y-0.5 font-mono text-[11px]">
+                    <div class="flex justify-between"><span class="text-cyan-400">sin θ:</span> <span id="valSin">0.000</span></div>
+                    <div class="flex justify-between"><span class="text-rose-400">cos θ:</span> <span id="valCos">1.000</span></div>
+                    <div class="flex justify-between"><span class="text-emerald-400">tan θ:</span> <span id="valTan">0.000</span></div>
                 </div>
             </div>
 
         </div>
 
         <!-- Main Interactive Canvas Viewport -->
-        <div class="glass-panel rounded-2xl p-2 sm:p-4 border border-slate-700/60 shadow-2xl relative">
+        <div class="glass-panel rounded-2xl p-2 sm:p-3 border border-slate-800 shadow-2xl relative">
             
-            <div class="w-full relative aspect-[16/9] min-h-[380px] max-h-[620px] bg-slate-950/90 rounded-xl overflow-hidden border border-slate-800">
+            <div class="w-full relative aspect-[16/9] min-h-[400px] max-h-[640px] bg-slate-950/95 rounded-xl overflow-hidden border border-slate-800">
                 <canvas id="mainCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
-                <!-- Interactive Hint Overlay -->
-                <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700/50 text-[11px] text-slate-300 flex items-center space-x-2">
+                <!-- Interactive Drag Hint -->
+                <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-[11px] text-slate-300 flex items-center space-x-1.5">
                     <i class="fa-regular fa-hand-pointer text-amber-400 animate-pulse"></i>
-                    <span>単位円上をドラッグして角度 θ を手動変更</span>
+                    <span>単位円上をドラッグして角度 θ を移動</span>
                 </div>
             </div>
 
             <!-- Controls Toolbar -->
-            <div class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center bg-slate-900/70 p-3.5 rounded-xl border border-slate-800">
+            <div class="mt-3 grid grid-cols-1 lg:grid-cols-12 gap-3 items-center bg-slate-900/80 p-3 rounded-xl border border-slate-800">
                 
                 <!-- Playback Buttons -->
                 <div class="lg:col-span-4 flex items-center justify-center lg:justify-start space-x-2">
-                    <button id="btnPlayPause" class="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold flex items-center space-x-2 shadow-lg shadow-cyan-500/20 transition active:scale-95 text-xs sm:text-sm">
+                    <button id="btnPlayPause" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold flex items-center space-x-2 shadow-lg shadow-cyan-500/20 transition active:scale-95 text-xs sm:text-sm">
                         <i id="iconPlayPause" class="fa-solid fa-play"></i>
                         <span id="lblPlayPause">再生</span>
                     </button>
-                    <button id="btnStepBack" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="少し戻る">
+                    <button id="btnStepBack" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="少し戻る">
                         <i class="fa-solid fa-backward-step text-xs"></i>
                     </button>
-                    <button id="btnStepFwd" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="少し進む">
+                    <button id="btnStepFwd" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="少し進む">
                         <i class="fa-solid fa-forward-step text-xs"></i>
                     </button>
-                    <button id="btnReset" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="角度をリセット">
+                    <button id="btnReset" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="角度をリセット (θ=0)">
                         <i class="fa-solid fa-rotate-right text-xs"></i>
                     </button>
                 </div>
 
                 <!-- Sliders -->
-                <div class="lg:col-span-8 space-y-2.5">
+                <div class="lg:col-span-8 space-y-2">
                     <!-- Angle Slider -->
                     <div class="flex items-center space-x-3">
                         <span class="text-xs font-semibold text-slate-400 w-14 text-right font-mono">角度 θ</span>
@@ -257,42 +279,6 @@
 
         </div>
 
-        <!-- Mathematical Concepts Guide -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1.5">
-                <div class="flex items-center space-x-2 text-cyan-400 font-bold text-xs sm:text-sm">
-                    <i class="fa-solid fa-arrows-up-down"></i>
-                    <span>y = sin(x) の射影</span>
-                </div>
-                <p class="text-xs text-slate-300 leading-relaxed">
-                    単位円上の点 $P$ から $y$ 軸へ降ろした射影点 <strong class="text-cyan-300 font-mono">Py(0, sin θ)</strong> の高さです。
-                    認証解除時、高さがそのまま右側の $\sin$ 曲線へ水平に直接転写されます。
-                </p>
-            </div>
-
-            <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1.5">
-                <div class="flex items-center space-x-2 text-rose-400 font-bold text-xs sm:text-sm">
-                    <i class="fa-solid fa-arrows-left-right"></i>
-                    <span>y = cos(x) の射影 ($x<0$ 反転)</span>
-                </div>
-                <p class="text-xs text-slate-300 leading-relaxed">
-                    単位円上の点 $P$ から $x$ 軸へ降ろした射影点 <strong class="text-rose-300 font-mono">Px(cos θ, 0)</strong> の横幅です。
-                    $x < 0$ 時には $x$ 軸下側を通る90度回転アーチガイドを通して、高さに変換されて描画されます。
-                </p>
-            </div>
-
-            <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-1.5">
-                <div class="flex items-center space-x-2 text-emerald-400 font-bold text-xs sm:text-sm">
-                    <i class="fa-solid fa-slash-forward"></i>
-                    <span>y = tan(x) と動径の傾き</span>
-                </div>
-                <p class="text-xs text-slate-300 leading-relaxed">
-                    点 (1,0) における接線 $x = 1$ と、動径直線（または反対方向延長線）との交点 <strong class="text-emerald-300 font-mono">T(1, tan θ)</strong> の $y$ 座標が動径の傾き $\tan\theta$ です。
-                    漸近線（$\theta = \pi/2 + k\pi$）で無限大へ発散します。
-                </p>
-            </div>
-        </div>
-
     </main>
 
     <script>
@@ -305,6 +291,9 @@
             // PIN Elements
             const pinInput = document.getElementById('pinInput');
             const btnUnlock = document.getElementById('btnUnlock');
+            const btnLock = document.getElementById('btnLock');
+            const pinFormArea = document.getElementById('pinFormArea');
+            const unlockedArea = document.getElementById('unlockedArea');
             const statusBadge = document.getElementById('statusBadge');
             const statusIcon = document.getElementById('statusIcon');
             const statusText = document.getElementById('statusText');
@@ -351,9 +340,9 @@
             let isDraggingCircle = false;
             let animationFrameId = null;
 
-            // Virtual Canvas Layout Resolution (1200 x 620)
+            // Virtual Canvas Layout Resolution (1200 x 600)
             const V_WIDTH = 1200;
-            const V_HEIGHT = 620;
+            const V_HEIGHT = 600;
 
             function resizeCanvas() {
                 const rect = canvas.parentElement.getBoundingClientRect();
@@ -377,69 +366,87 @@
                 return `${p.toFixed(2)} π`;
             }
 
-            function tryUnlockPIN() {
+            // PIN Code Unlock Verification (ONLY on button click or Enter key)
+            function executeUnlock() {
                 const val = pinInput.value.trim();
                 if (val === "1728") {
                     isUnlocked = true;
+                    pinFormArea.classList.add('hidden');
+                    unlockedArea.classList.remove('hidden');
+                    
                     statusBadge.className = "px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center space-x-1";
                     statusIcon.className = "fa-solid fa-lock-open text-emerald-400";
-                    statusText.textContent = "🔓 グラフ表示モード (PIN認証完了)";
+                    statusText.textContent = "グラフ表示中";
+                    
                     pinInput.classList.remove('border-rose-500');
-                    pinInput.classList.add('border-emerald-500');
+                    pinInput.value = "";
                     render();
                 } else {
                     isUnlocked = false;
-                    statusBadge.className = "px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center space-x-1";
-                    statusIcon.className = "fa-solid fa-lock text-rose-400";
-                    statusText.textContent = "グラフ非表示";
-                    pinInput.classList.add('border-rose-500');
-                    render();
+                    pinInput.classList.add('border-rose-500', 'animate-shake');
+                    setTimeout(() => {
+                        pinInput.classList.remove('animate-shake');
+                    }, 400);
                 }
             }
 
-            btnUnlock.addEventListener('click', tryUnlockPIN);
-            pinInput.addEventListener('input', () => {
-                if (pinInput.value.trim() === "1728") {
-                    tryUnlockPIN();
+            function executeLock() {
+                isUnlocked = false;
+                unlockedArea.classList.add('hidden');
+                pinFormArea.classList.remove('hidden');
+
+                statusBadge.className = "px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-medium flex items-center space-x-1";
+                statusIcon.className = "fa-solid fa-lock text-rose-400";
+                statusText.textContent = "グラフ非表示";
+
+                render();
+            }
+
+            btnUnlock.addEventListener('click', executeUnlock);
+            btnLock.addEventListener('click', executeLock);
+
+            pinInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    executeUnlock();
                 }
             });
 
             // Tab Switcher Updates
             function updateTabStyles() {
                 tabSin.className = activeTab === 'sin' 
-                    ? "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
-                    : "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-white";
+                    ? "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 bg-cyan-600 text-white shadow-lg shadow-cyan-600/30"
+                    : "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 text-slate-400 hover:text-white";
 
                 tabCos.className = activeTab === 'cos' 
-                    ? "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 bg-rose-600 text-white shadow-lg shadow-rose-600/30"
-                    : "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-white";
+                    ? "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 bg-rose-600 text-white shadow-lg shadow-rose-600/30"
+                    : "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 text-slate-400 hover:text-white";
 
                 tabTan.className = activeTab === 'tan' 
-                    ? "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30"
-                    : "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-white";
+                    ? "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30"
+                    : "px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center space-x-2 text-slate-400 hover:text-white";
 
                 // Update Dynamic Target Dashboard Card
                 if (activeTab === 'sin') {
-                    cardTarget.className = "glass-panel p-3.5 rounded-2xl border border-cyan-500/30 relative overflow-hidden";
+                    cardTarget.className = "glass-panel p-3 rounded-2xl border border-cyan-500/30 relative overflow-hidden";
                     lblTargetTitle.textContent = "y軸射影 Py = sin(θ)";
                     lblTargetTitle.className = "text-[11px] font-medium text-cyan-400";
                     iconTarget.className = "fa-solid fa-arrows-up-down text-cyan-400";
-                    valTarget.className = "text-lg sm:text-2xl font-bold font-mono text-cyan-300";
+                    valTarget.className = "text-base sm:text-xl font-bold font-mono text-cyan-300";
                     lblTargetSub.textContent = "高さ";
                 } else if (activeTab === 'cos') {
-                    cardTarget.className = "glass-panel p-3.5 rounded-2xl border border-rose-500/30 relative overflow-hidden";
-                    lblTargetTitle.textContent = "x軸射影 Px = cos(θ)";
+                    cardTarget.className = "glass-panel p-3 rounded-2xl border border-rose-500/30 relative overflow-hidden";
+                    lblTargetTitle.textContent = "x軸射影 Px = cos(θ) → Q";
                     lblTargetTitle.className = "text-[11px] font-medium text-rose-400";
                     iconTarget.className = "fa-solid fa-arrows-left-right text-rose-400";
-                    valTarget.className = "text-lg sm:text-2xl font-bold font-mono text-rose-300";
-                    lblTargetSub.textContent = "横幅";
+                    valTarget.className = "text-base sm:text-xl font-bold font-mono text-rose-300";
+                    lblTargetSub.textContent = "高さ転写";
                 } else {
-                    cardTarget.className = "glass-panel p-3.5 rounded-2xl border border-emerald-500/30 relative overflow-hidden";
-                    lblTargetTitle.textContent = "接線交点 T(1, tan θ)";
+                    cardTarget.className = "glass-panel p-3 rounded-2xl border border-emerald-500/30 relative overflow-hidden";
+                    lblTargetTitle.textContent = "接線交点 T = tan(θ)";
                     lblTargetTitle.className = "text-[11px] font-medium text-emerald-400";
                     iconTarget.className = "fa-solid fa-slash-forward text-emerald-400";
-                    valTarget.className = "text-lg sm:text-2xl font-bold font-mono text-emerald-300";
-                    lblTargetSub.textContent = "動径の傾き";
+                    valTarget.className = "text-base sm:text-xl font-bold font-mono text-emerald-300";
+                    lblTargetSub.textContent = "傾き";
                 }
             }
 
@@ -455,14 +462,16 @@
                 const cosVal = Math.cos(theta);
                 const tanVal = Math.tan(theta);
 
+                const isAsymptote = Math.abs(cosVal) < 0.005;
+
                 valSin.textContent = sinVal.toFixed(3);
                 valCos.textContent = cosVal.toFixed(3);
-                valTan.textContent = Math.abs(tanVal) > 99 ? '±∞' : tanVal.toFixed(3);
+                valTan.textContent = isAsymptote ? '未定義' : tanVal.toFixed(3);
                 valPointP.textContent = `(${cosVal.toFixed(2)}, ${sinVal.toFixed(2)})`;
 
                 if (activeTab === 'sin') valTarget.textContent = sinVal.toFixed(3);
                 else if (activeTab === 'cos') valTarget.textContent = cosVal.toFixed(3);
-                else valTarget.textContent = Math.abs(tanVal) > 99 ? '±∞' : tanVal.toFixed(3);
+                else valTarget.textContent = isAsymptote ? '未定義' : tanVal.toFixed(3);
 
                 sliderTheta.value = theta;
                 sliderThetaLabel.textContent = formatPi(theta);
@@ -473,30 +482,31 @@
 
                 // Dark Gradient Background
                 const bgGrad = ctx.createLinearGradient(0, 0, V_WIDTH, V_HEIGHT);
-                bgGrad.addColorStop(0, '#090d16');
-                bgGrad.addColorStop(1, '#0f172a');
+                bgGrad.addColorStop(0, '#080c14');
+                bgGrad.addColorStop(1, '#0e1726');
                 ctx.fillStyle = bgGrad;
                 ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
-                // --- 1. Unit Circle Axes ---
                 const uc = layout.uc;
-                ctx.strokeStyle = '#232f48';
+                const g = layout.graph;
+
+                // --- 1. Unit Circle Axes ---
+                ctx.strokeStyle = '#1e293b';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.moveTo(uc.cx, uc.cy - uc.r - 40);
-                ctx.lineTo(uc.cx, uc.cy + uc.r + 40);
-                ctx.moveTo(uc.cx - uc.r - 40, uc.cy);
-                ctx.lineTo(uc.cx + uc.r + 40, uc.cy);
+                ctx.moveTo(uc.cx, uc.cy - uc.r - 45);
+                ctx.lineTo(uc.cx, uc.cy + uc.r + 45);
+                ctx.moveTo(uc.cx - uc.r - 35, uc.cy);
+                ctx.lineTo(uc.cx + uc.r + 35, uc.cy);
                 ctx.stroke();
 
                 ctx.fillStyle = '#64748b';
-                ctx.font = '12px Inter, sans-serif';
-                ctx.fillText('x = cos θ', uc.cx + uc.r + 10, uc.cy + 15);
-                ctx.fillText('y = sin θ', uc.cx - 25, uc.cy - uc.r - 15);
-                ctx.fillText('O', uc.cx - 15, uc.cy + 15);
+                ctx.font = '11px Inter, sans-serif';
+                ctx.fillText('x = cos θ', uc.cx + uc.r + 8, uc.cy + 14);
+                ctx.fillText('y = sin θ', uc.cx - 24, uc.cy - uc.r - 12);
+                ctx.fillText('O', uc.cx - 14, uc.cy + 14);
 
                 // --- 2. Right Graph Section Axes ---
-                const g = layout.graph;
                 ctx.strokeStyle = '#334155';
                 ctx.lineWidth = 1.5;
 
@@ -507,23 +517,73 @@
                 ctx.stroke();
 
                 // Vertical Axis (x = 0)
+                const yAxisTop = activeTab === 'tan' ? g.y0 - g.scale * 3.5 - 15 : g.y0 - g.scale * 1.5 - 15;
+                const yAxisBottom = activeTab === 'tan' ? g.y0 + g.scale * 3.5 + 15 : g.y0 + g.scale * 1.5 + 15;
+
                 ctx.beginPath();
-                ctx.moveTo(g.x0, g.y0 - g.amp - 30);
-                ctx.lineTo(g.x0, g.y0 + g.amp + 30);
+                ctx.moveTo(g.x0, yAxisTop);
+                ctx.lineTo(g.x0, yAxisBottom);
                 ctx.stroke();
 
-                // Dashed Boundary lines for y = 1 and y = -1 (If not tan or optional for tan)
-                ctx.strokeStyle = '#1e293b';
-                ctx.setLineDash([4, 4]);
-                ctx.beginPath();
-                ctx.moveTo(g.x0, g.y0 - g.amp);
-                ctx.lineTo(g.x0 + g.width, g.y0 - g.amp);
-                ctx.moveTo(g.x0, g.y0 + g.amp);
-                ctx.lineTo(g.x0 + g.width, g.y0 + g.amp);
-                ctx.stroke();
-                ctx.setLineDash([]);
+                // --- 3. Grid Lines & Y-Axis Ticks ---
+                ctx.font = '11px JetBrains Mono, monospace';
+                ctx.textAlign = 'right';
 
-                // Radian Tick Marks on X-axis
+                if (activeTab === 'tan') {
+                    // Expanded Range Grid Lines for Tan (-3, -2, -1, 1, 2, 3)
+                    const yValues = [3, 2, 1, -1, -2, -3];
+                    yValues.forEach(val => {
+                        const yPixel = g.y0 - val * g.scale;
+                        
+                        // Horizontal Grid Line
+                        ctx.strokeStyle = val === 1 || val === -1 ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)';
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(g.x0, yPixel);
+                        ctx.lineTo(g.x0 + g.width, yPixel);
+                        ctx.stroke();
+
+                        // Y-Axis Tick & Label
+                        ctx.strokeStyle = '#475569';
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.moveTo(g.x0 - 4, yPixel);
+                        ctx.lineTo(g.x0, yPixel);
+                        ctx.stroke();
+
+                        ctx.fillStyle = val === 1 || val === -1 ? '#cbd5e1' : '#64748b';
+                        ctx.fillText(val > 0 ? `+${val}` : `${val}`, g.x0 - 8, yPixel + 4);
+                    });
+                } else {
+                    // Sin / Cos Grid Lines (1, 0.5, -0.5, -1)
+                    const yValues = [1, 0.5, -0.5, -1];
+                    yValues.forEach(val => {
+                        const yPixel = g.y0 - val * g.scale;
+                        
+                        ctx.strokeStyle = val === 1 || val === -1 ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)';
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(g.x0, yPixel);
+                        ctx.lineTo(g.x0 + g.width, yPixel);
+                        ctx.stroke();
+
+                        ctx.strokeStyle = '#475569';
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.moveTo(g.x0 - 4, yPixel);
+                        ctx.lineTo(g.x0, yPixel);
+                        ctx.stroke();
+
+                        ctx.fillStyle = val === 1 || val === -1 ? '#cbd5e1' : '#64748b';
+                        ctx.fillText(`${val}`, g.x0 - 8, yPixel + 4);
+                    });
+                }
+
+                // Origin '0' on Y-axis
+                ctx.fillStyle = '#64748b';
+                ctx.fillText('0', g.x0 - 8, g.y0 + 4);
+
+                // --- 4. Radian Tick Marks on X-axis (Strictly Radians, NO degrees) ---
                 const ticks = [
                     { val: 0, label: '0' },
                     { val: Math.PI / 2, label: 'π/2' },
@@ -536,10 +596,7 @@
                     { val: 4 * Math.PI, label: '4π' },
                 ];
 
-                ctx.fillStyle = '#64748b';
-                ctx.font = '11px JetBrains Mono, monospace';
                 ctx.textAlign = 'center';
-
                 ticks.forEach(tick => {
                     const tx = g.x0 + (tick.val / MAX_THETA) * g.width;
                     ctx.beginPath();
@@ -550,20 +607,14 @@
                     ctx.fillText(tick.label, tx, g.y0 + 20);
                 });
 
-                // Y-axis ticks (-1, 0, 1)
-                ctx.textAlign = 'right';
-                ctx.fillText('1', g.x0 - 8, g.y0 - g.amp + 4);
-                ctx.fillText('0', g.x0 - 8, g.y0 + 4);
-                ctx.fillText('-1', g.x0 - 8, g.y0 + g.amp + 4);
-
-                // Title label for current active graph
+                // Title label for current graph mode
                 ctx.fillStyle = activeTab === 'sin' ? '#06b6d4' : (activeTab === 'cos' ? '#f43f5e' : '#10b981');
-                ctx.font = 'bold 14px Inter, sans-serif';
+                ctx.font = 'bold 13px Inter, sans-serif';
                 ctx.textAlign = 'left';
-                let modeTitle = 'y = sin(x) グラフ';
-                if (activeTab === 'cos') modeTitle = 'y = cos(x) グラフ';
-                if (activeTab === 'tan') modeTitle = 'y = tan(x) グラフ';
-                ctx.fillText(modeTitle, g.x0 + 10, g.y0 - g.amp - 10);
+                let modeTitle = 'y = sin x グラフ';
+                if (activeTab === 'cos') modeTitle = 'y = cos x グラフ';
+                if (activeTab === 'tan') modeTitle = 'y = tan x グラフ (値域拡大表示: -3.5 〜 +3.5)';
+                ctx.fillText(modeTitle, g.x0 + 10, yAxisTop + 10);
 
                 ctx.restore();
             }
@@ -583,22 +634,19 @@
                 const px = uc.cx + cosVal * uc.r;
                 const py = uc.cy - sinVal * uc.r;
 
-                // Projected Point Px on X-axis (cos)
+                // Projected Points
                 const px_x = px;
                 const px_y = uc.cy;
-
-                // Projected Point Py on Y-axis (sin)
                 const py_x = uc.cx;
                 const py_y = py;
 
-                // --- Multi-layer Yellow Sector Fill (2周目以降の重ね塗り) ---
-                const sectorRadius = 38;
+                // --- Multi-layer Yellow Sector Fill (Stacking for θ > 2π) ---
+                const sectorRadius = 32;
                 const fullTurns = Math.floor(theta / (Math.PI * 2));
                 const remainderAngle = theta % (Math.PI * 2);
 
-                ctx.fillStyle = 'rgba(255, 215, 0, 0.35)';
-
-                // Full circle layers for completed revolutions
+                // Draw 1 layer of yellow fill for each completed turn (Cumulative alpha opacity)
+                ctx.fillStyle = 'rgba(234, 179, 8, 0.22)';
                 for (let i = 0; i < fullTurns; i++) {
                     ctx.beginPath();
                     ctx.moveTo(uc.cx, uc.cy);
@@ -607,8 +655,9 @@
                     ctx.fill();
                 }
 
-                // Overlay active partial sector layer
+                // Overlay active remainder sector
                 if (remainderAngle > 0.0001) {
+                    ctx.fillStyle = 'rgba(234, 179, 8, 0.32)';
                     ctx.beginPath();
                     ctx.moveTo(uc.cx, uc.cy);
                     ctx.arc(uc.cx, uc.cy, sectorRadius, 0, -remainderAngle, true);
@@ -616,7 +665,7 @@
                     ctx.fill();
                 }
 
-                // Outer Arc stroke indicator
+                // Sector Arc Stroke
                 ctx.strokeStyle = '#f59e0b';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
@@ -631,15 +680,15 @@
                 ctx.lineTo(px, py);
                 ctx.stroke();
 
-                // --- Tab Specific Visualizations ---
+                // --- Tab Specific Render Logic ---
+                let rotatedY = uc.cy;
                 let tx = uc.cx + uc.r;
                 let ty = uc.cy - tanVal * uc.r;
-                let rotatedY = uc.cy;
 
                 if (activeTab === 'sin') {
-                    // Show ONLY Py on Y-axis and horizontal dashed guide line
+                    // Show ONLY Py on y-axis (Do NOT display Px)
                     ctx.strokeStyle = '#06b6d4';
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 3.5;
                     ctx.beginPath();
                     ctx.moveTo(uc.cx, uc.cy);
                     ctx.lineTo(py_x, py_y);
@@ -660,9 +709,9 @@
                     ctx.fill();
 
                 } else if (activeTab === 'cos') {
-                    // Show ONLY Px on X-axis and vertical dashed guide line
+                    // Show ONLY Px on x-axis (Do NOT display Py)
                     ctx.strokeStyle = '#f43f5e';
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 3.5;
                     ctx.beginPath();
                     ctx.moveTo(uc.cx, uc.cy);
                     ctx.lineTo(px_x, px_y);
@@ -682,7 +731,8 @@
                     ctx.arc(px_x, px_y, 5, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // 90-Degree Rotation Guide Arc (Always visible in BOTH locked and unlocked states)
+                    // --- 90-Degree Rotation Arc Guide (Px -> Q on y-axis) ---
+                    // ALWAYS VISIBLE IN BOTH LOCKED AND UNLOCKED STATES!
                     const pivotX = uc.cx;
                     const pivotY = uc.cy;
 
@@ -696,38 +746,39 @@
                         ctx.arc(pivotX, pivotY, dist, 0, -Math.PI / 2, true);
                         rotatedY = pivotY - dist;
                     } else {
-                        // x < 0: Arc BELOW x-axis (Quadrant 3)
+                        // x < 0: Arc BELOW x-axis (Quadrant 3 / negative y side)
                         const dist = Math.abs(cosVal) * uc.r;
                         ctx.arc(pivotX, pivotY, dist, Math.PI, Math.PI / 2, true);
                         rotatedY = pivotY + dist;
                     }
                     ctx.stroke();
 
-                    // Transformed height marker dot on Y-axis
+                    // Transformed Point Q on Y-axis
                     ctx.fillStyle = '#fb7185';
                     ctx.beginPath();
-                    ctx.arc(pivotX, rotatedY, 4.5, 0, Math.PI * 2);
+                    ctx.arc(pivotX, rotatedY, 5, 0, Math.PI * 2);
                     ctx.fill();
 
                 } else if (activeTab === 'tan') {
-                    // Show ONLY Tangent line x = 1, Ray, and Intersection T (NO Px or Py)
+                    // Show ONLY Tangent x = 1, Radial Ray, and Intersection T (NO Px or Py)
                     const tangentX = uc.cx + uc.r;
                     ctx.strokeStyle = '#334155';
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.moveTo(tangentX, uc.cy - 260);
-                    ctx.lineTo(tangentX, uc.cy + 260);
+                    ctx.moveTo(tangentX, 20);
+                    ctx.lineTo(tangentX, 580);
                     ctx.stroke();
 
                     ctx.fillStyle = '#64748b';
                     ctx.beginPath();
-                    ctx.arc(tangentX, uc.cy, 4, 0, Math.PI * 2);
+                    ctx.arc(tangentX, uc.cy, 3.5, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.font = '10px Inter, sans-serif';
-                    ctx.fillText('(1, 0)', tangentX + 6, uc.cy + 14);
+                    ctx.fillText('(1, 0)', tangentX + 6, uc.cy + 12);
 
+                    // Radial Ray Extension
                     ctx.strokeStyle = '#38bdf8';
-                    ctx.lineWidth = 1.5;
+                    ctx.lineWidth = 1.2;
                     ctx.setLineDash([3, 3]);
 
                     const extendLen = 350;
@@ -742,6 +793,7 @@
                     const isAsymptote = Math.abs(cosVal) < 0.005;
 
                     if (!isAsymptote) {
+                        // Vivid Emerald Segment from (1,0) to T
                         ctx.strokeStyle = '#10b981';
                         ctx.lineWidth = 4;
                         ctx.beginPath();
@@ -749,12 +801,12 @@
                         ctx.lineTo(tangentX, ty);
                         ctx.stroke();
 
-                        if (ty >= uc.cy - 280 && ty <= uc.cy + 280) {
+                        if (ty >= 20 && ty <= 580) {
                             ctx.fillStyle = '#10b981';
                             ctx.shadowColor = '#34d399';
                             ctx.shadowBlur = 8;
                             ctx.beginPath();
-                            ctx.arc(tangentX, ty, 6, 0, Math.PI * 2);
+                            ctx.arc(tangentX, ty, 5.5, 0, Math.PI * 2);
                             ctx.fill();
                             ctx.shadowBlur = 0;
 
@@ -771,14 +823,14 @@
                 ctx.shadowBlur = 8;
                 ctx.fillStyle = '#fef08a';
                 ctx.beginPath();
-                ctx.arc(px, py, 6.5, 0, Math.PI * 2);
+                ctx.arc(px, py, 6, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
 
                 ctx.fillStyle = '#fef08a';
-                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.font = 'bold 11px Inter, sans-serif';
                 ctx.textAlign = px >= uc.cx ? 'left' : 'right';
-                ctx.fillText(`P(${cosVal.toFixed(2)}, ${sinVal.toFixed(2)})`, px + (px >= uc.cx ? 10 : -10), py - 8);
+                ctx.fillText(`P(${cosVal.toFixed(2)}, ${sinVal.toFixed(2)})`, px + (px >= uc.cx ? 8 : -8), py - 8);
 
                 ctx.restore();
 
@@ -789,15 +841,15 @@
                 const g = layout.graph;
                 ctx.save();
 
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-                ctx.fillRect(g.x0 - 5, g.y0 - g.amp - 30, g.width + 20, g.amp * 2 + 60);
+                ctx.fillStyle = 'rgba(8, 12, 20, 0.92)';
+                ctx.fillRect(g.x0 - 5, 20, g.width + 20, 560);
 
-                const cardW = 460;
-                const cardH = 150;
+                const cardW = 440;
+                const cardH = 140;
                 const cardX = g.x0 + (g.width - cardW) / 2;
                 const cardY = g.y0 - cardH / 2;
 
-                ctx.fillStyle = 'rgba(30, 41, 59, 0.95)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
                 ctx.strokeStyle = '#f43f5e';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
@@ -806,17 +858,17 @@
                 ctx.stroke();
 
                 ctx.fillStyle = '#fb7185';
-                ctx.font = '28px "Font Awesome 6 Free"';
+                ctx.font = '26px "Font Awesome 6 Free"';
                 ctx.textAlign = 'center';
-                ctx.fillText('\uf023', cardX + cardW / 2, cardY + 45);
+                ctx.fillText('\uf023', cardX + cardW / 2, cardY + 42);
 
                 ctx.fillStyle = '#f87171';
-                ctx.font = 'bold 15px Inter, sans-serif';
-                ctx.fillText('グラフ描画ロック中', cardX + cardW / 2, cardY + 78);
+                ctx.font = 'bold 14px Inter, sans-serif';
+                ctx.fillText('グラフ描画ロック中', cardX + cardW / 2, cardY + 74);
 
                 ctx.fillStyle = '#cbd5e1';
                 ctx.font = '12px Inter, sans-serif';
-                ctx.fillText('PINコードを入力するとグラフが表示されます', cardX + cardW / 2, cardY + 108);
+                ctx.fillText('PINコードを入力して「ロック解除」を押すと、グラフが表示されます。', cardX + cardW / 2, cardY + 104);
 
                 ctx.restore();
             }
@@ -825,17 +877,19 @@
                 const g = layout.graph;
                 ctx.save();
 
+                // Background curve
                 ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 for (let x = 0; x <= g.width; x += 2) {
                     const t = (x / g.width) * MAX_THETA;
-                    const y = g.y0 - Math.sin(t) * g.amp;
+                    const y = g.y0 - Math.sin(t) * g.scale;
                     if (x === 0) ctx.moveTo(g.x0 + x, y);
                     else ctx.lineTo(g.x0 + x, y);
                 }
                 ctx.stroke();
 
+                // Active curve up to theta
                 const activeWidth = (Math.min(theta, MAX_THETA) / MAX_THETA) * g.width;
                 ctx.strokeStyle = '#06b6d4';
                 ctx.lineWidth = 3;
@@ -844,7 +898,7 @@
                 ctx.beginPath();
                 for (let x = 0; x <= activeWidth; x += 2) {
                     const t = (x / g.width) * MAX_THETA;
-                    const y = g.y0 - Math.sin(t) * g.amp;
+                    const y = g.y0 - Math.sin(t) * g.scale;
                     if (x === 0) ctx.moveTo(g.x0 + x, y);
                     else ctx.lineTo(g.x0 + x, y);
                 }
@@ -852,15 +906,16 @@
                 ctx.shadowBlur = 0;
 
                 const currX = g.x0 + activeWidth;
-                const currY = g.y0 - sinVal * g.amp;
+                const currY = g.y0 - sinVal * g.scale;
 
                 ctx.fillStyle = '#06b6d4';
                 ctx.beginPath();
-                ctx.arc(currX, currY, 6, 0, Math.PI * 2);
+                ctx.arc(currX, currY, 5.5, 0, Math.PI * 2);
                 ctx.fill();
 
+                // Tracking horizontal line from Py to graph point
                 ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 1.2;
                 ctx.setLineDash([4, 4]);
                 ctx.beginPath();
                 ctx.moveTo(projPoints.py_x, projPoints.py_y);
@@ -875,17 +930,19 @@
                 const g = layout.graph;
                 ctx.save();
 
+                // Background curve
                 ctx.strokeStyle = 'rgba(244, 63, 94, 0.2)';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 for (let x = 0; x <= g.width; x += 2) {
                     const t = (x / g.width) * MAX_THETA;
-                    const y = g.y0 - Math.cos(t) * g.amp;
+                    const y = g.y0 - Math.cos(t) * g.scale;
                     if (x === 0) ctx.moveTo(g.x0 + x, y);
                     else ctx.lineTo(g.x0 + x, y);
                 }
                 ctx.stroke();
 
+                // Active curve up to theta
                 const activeWidth = (Math.min(theta, MAX_THETA) / MAX_THETA) * g.width;
                 ctx.strokeStyle = '#f43f5e';
                 ctx.lineWidth = 3;
@@ -894,7 +951,7 @@
                 ctx.beginPath();
                 for (let x = 0; x <= activeWidth; x += 2) {
                     const t = (x / g.width) * MAX_THETA;
-                    const y = g.y0 - Math.cos(t) * g.amp;
+                    const y = g.y0 - Math.cos(t) * g.scale;
                     if (x === 0) ctx.moveTo(g.x0 + x, y);
                     else ctx.lineTo(g.x0 + x, y);
                 }
@@ -902,17 +959,17 @@
                 ctx.shadowBlur = 0;
 
                 const currX = g.x0 + activeWidth;
-                const currY = g.y0 - cosVal * g.amp;
+                const currY = g.y0 - cosVal * g.scale;
 
                 ctx.fillStyle = '#f43f5e';
                 ctx.beginPath();
-                ctx.arc(currX, currY, 6, 0, Math.PI * 2);
+                ctx.arc(currX, currY, 5.5, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Horizontal Guide Line from transferred height on y-axis to current point on Cosine Graph
+                // Tracking horizontal line from Q(0, cosθ) on y-axis to graph point
                 if (projPoints && projPoints.rotatedY !== undefined) {
                     ctx.strokeStyle = '#fb7185';
-                    ctx.lineWidth = 1.5;
+                    ctx.lineWidth = 1.2;
                     ctx.setLineDash([4, 4]);
                     ctx.beginPath();
                     ctx.moveTo(layout.uc.cx, projPoints.rotatedY);
@@ -924,23 +981,124 @@
                 ctx.restore();
             }
 
+            function drawTanGraph(layout, tanVal, projPoints) {
+                const g = layout.graph;
+                ctx.save();
+
+                // Vertical Dashed Asymptotes at π/2, 3π/2, 5π/2, 7π/2
+                const asymptotes = [Math.PI / 2, (3 * Math.PI) / 2, (5 * Math.PI) / 2, (7 * Math.PI) / 2];
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([5, 5]);
+                asymptotes.forEach(asym => {
+                    const ax = g.x0 + (asym / MAX_THETA) * g.width;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, 20);
+                    ctx.lineTo(ax, 580);
+                    ctx.stroke();
+                });
+                ctx.setLineDash([]);
+
+                // Background tan curve segments
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                let drawing = false;
+                for (let x = 0; x <= g.width; x += 1.5) {
+                    const t = (x / g.width) * MAX_THETA;
+                    const c = Math.cos(t);
+                    if (Math.abs(c) < 0.01) {
+                        drawing = false;
+                        continue;
+                    }
+                    const y = g.y0 - Math.tan(t) * g.scale;
+                    if (y < 20 || y > 580) {
+                        drawing = false;
+                        continue;
+                    }
+                    if (!drawing) {
+                        ctx.moveTo(g.x0 + x, y);
+                        drawing = true;
+                    } else {
+                        ctx.lineTo(g.x0 + x, y);
+                    }
+                }
+                ctx.stroke();
+
+                // Active tan curve up to theta
+                const activeWidth = (Math.min(theta, MAX_THETA) / MAX_THETA) * g.width;
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = '#34d399';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                drawing = false;
+                for (let x = 0; x <= activeWidth; x += 1.5) {
+                    const t = (x / g.width) * MAX_THETA;
+                    const c = Math.cos(t);
+                    if (Math.abs(c) < 0.01) {
+                        drawing = false;
+                        continue;
+                    }
+                    const y = g.y0 - Math.tan(t) * g.scale;
+                    if (y < 20 || y > 580) {
+                        drawing = false;
+                        continue;
+                    }
+                    if (!drawing) {
+                        ctx.moveTo(g.x0 + x, y);
+                        drawing = true;
+                    } else {
+                        ctx.lineTo(g.x0 + x, y);
+                    }
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                const isAsymptote = Math.abs(Math.cos(theta)) < 0.01;
+                if (!isAsymptote) {
+                    const currX = g.x0 + activeWidth;
+                    const currY = g.y0 - tanVal * g.scale;
+
+                    if (currY >= 20 && currY <= 580) {
+                        ctx.fillStyle = '#10b981';
+                        ctx.beginPath();
+                        ctx.arc(currX, currY, 5.5, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Tracking horizontal line from T(1, tanθ)
+                        ctx.strokeStyle = '#34d399';
+                        ctx.lineWidth = 1.2;
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(projPoints.tx, projPoints.ty);
+                        ctx.lineTo(currX, currY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
+
+                ctx.restore();
+            }
+
             function render() {
+                // Layout Calibration: 1 unit = 75px
                 const layout = {
-                    uc: { cx: 220, cy: 310, r: 135 },
-                    graph: { x0: 500, y0: 310, width: 650, amp: 135 }
+                    uc: { cx: 180, cy: 300, r: 75 },
+                    graph: { x0: 460, y0: 300, width: 680, scale: 75 }
                 };
 
                 const sinVal = Math.sin(theta);
                 const cosVal = Math.cos(theta);
                 const tanVal = Math.tan(theta);
 
-                // Render Background & Axes
+                // Render Background & Grid Axes
                 drawGridAndAxes(layout);
 
-                // Render Unit Circle, Geometry, and Projections (Always Active regardless of PIN)
+                // Render Unit Circle & Projections (Always Animated)
                 const projPoints = drawUnitCircleAndProjections(layout, sinVal, cosVal, tanVal);
 
-                // Render Graph Section (Dependent on PIN Unlock Status)
+                // Render Graph Plot (Locked vs Unlocked)
                 if (!isUnlocked) {
                     drawLockedGraphOverlay(layout);
                 } else {
@@ -980,7 +1138,7 @@
                 }
             }
 
-            // Canvas Pointer Interaction for Direct Angle Dragging
+            // Pointer Interaction for Unit Circle Dragging
             function handlePointerMove(e) {
                 if (!isDraggingCircle) return;
 
@@ -991,8 +1149,8 @@
                 const mouseX = (e.clientX - rect.left) * scaleX;
                 const mouseY = (e.clientY - rect.top) * scaleY;
 
-                const ucX = 220;
-                const ucY = 310;
+                const ucX = 180;
+                const ucY = 300;
 
                 const dx = mouseX - ucX;
                 const dy = ucY - mouseY; // Invert Y for Cartesian angle
@@ -1015,8 +1173,8 @@
                 const mouseX = (e.clientX - rect.left) * scaleX;
                 const mouseY = (e.clientY - rect.top) * scaleY;
 
-                const dist = Math.hypot(mouseX - 220, mouseY - 310);
-                if (dist <= 180) {
+                const dist = Math.hypot(mouseX - 180, mouseY - 300);
+                if (dist <= 120) {
                     isDraggingCircle = true;
                     if (isPlaying) togglePlay();
                     handlePointerMove(e);
@@ -1036,8 +1194,8 @@
                     const mouseX = (touch.clientX - rect.left) * scaleX;
                     const mouseY = (touch.clientY - rect.top) * scaleY;
 
-                    const dist = Math.hypot(mouseX - 220, mouseY - 310);
-                    if (dist <= 180) {
+                    const dist = Math.hypot(mouseX - 180, mouseY - 300);
+                    if (dist <= 120) {
                         isDraggingCircle = true;
                         if (isPlaying) togglePlay();
                         handlePointerMove(touch);
@@ -1053,7 +1211,7 @@
 
             window.addEventListener('touchend', () => { isDraggingCircle = false; });
 
-            // Event Listeners for UI Controls
+            // Controls Event Listeners
             btnPlayPause.addEventListener('click', togglePlay);
 
             btnStepBack.addEventListener('click', () => {
@@ -1085,7 +1243,7 @@
                 sliderSpeedLabel.textContent = `${speedFactor.toFixed(1)}x`;
             });
 
-            // Initial Launch Render
+            // Initial Launch
             updateTabStyles();
             resizeCanvas();
             render();
