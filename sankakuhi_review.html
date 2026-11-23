@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数学Ⅰ 総復習タイムアタック</title>
+<style>
+  :root{
+    --bg:#f6f5f1; --card:#fff; --ink:#1f2328; --sub:#6b6f76; --line:#dedbd2; --soft:#f6f5f1;
+    --accent:#2f5d8a; --ok:#2e7d4f; --okbg:#e6f4ea; --ng:#b3261e; --ngbg:#fbe9e7; --gold:#b8860b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;line-height:1.7}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .screen{display:none}.screen.on{display:block}
+  .btn{border:0;border-radius:10px;padding:10px 18px;font:inherit;cursor:pointer}
+  .btn.main{background:var(--accent);color:#fff}
+  .btn.main:disabled{background:#a9b6c3;cursor:default}
+  .btn.sub{background:#fff;border:1px solid var(--line);color:var(--sub)}
+  .btn.danger{background:#fff;border:1px solid var(--ng);color:var(--ng)}
+  .link{background:none;border:0;color:var(--sub);text-decoration:underline;font:inherit;font-size:.85rem;cursor:pointer}
+  i.v{font-family:"Times New Roman",serif;font-size:1.12em}
+  .rt{white-space:nowrap}.rd{border-top:1.4px solid currentColor;padding:0 2px 0 1px;margin-left:1px}
+  .fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.92em;line-height:1.25;margin:0 2px}
+  .fr .nu{border-bottom:1.4px solid currentColor;padding:0 4px}.fr .de{padding:0 4px}
+
+  /* タイトル */
+  .title{text-align:center;padding:30px 20px}
+  .title .sub{color:var(--sub);font-size:.85rem;letter-spacing:.2em}
+  .title h1{font-size:1.7rem;margin:6px 0 4px;line-height:1.4}
+  .title .big{color:var(--accent);font-weight:700;margin-bottom:18px}
+  .login{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin:8px 0 18px;font-size:1.05rem}
+  select{font:inherit;font-size:1.05rem;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#fff}
+  .start{padding:14px 42px;font-size:1.1rem;font-weight:700}
+  .privacy{font-size:.78rem;color:var(--sub);margin-top:16px}
+
+  /* メニュー */
+  .who{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .who b{font-size:1.15rem}
+  .who .btn{margin-left:auto;padding:6px 12px;font-size:.85rem}
+  .stages{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stage{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;text-align:left;font:inherit;cursor:pointer;color:var(--ink)}
+  .stage:hover{border-color:var(--accent)}
+  .stage .no{font-size:.8rem;color:var(--accent);font-weight:700}
+  .stage .nm{font-size:1.1rem;font-weight:700;margin:2px 0}
+  .stage .ds{font-size:.8rem;color:var(--sub)}
+  .stage .bs{margin-top:8px;font-size:.88rem}
+  .stage .bs b{color:var(--accent);font-size:1.05rem}
+  .total{margin:14px 0;text-align:center;font-size:.95rem}
+  .total b{font-size:1.3rem;color:var(--accent)}
+  .codebox{margin-top:14px;background:#fff;border:1px dashed var(--accent);border-radius:12px;padding:14px 16px}
+  .codebox h3{margin:0 0 6px;font-size:.95rem}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1rem;background:var(--soft);padding:8px 10px;border-radius:8px;word-break:break-all;user-select:all}
+  .codebox .row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  .small{font-size:.8rem;color:var(--sub)}
+  details.formula{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px}
+  details.formula summary{cursor:pointer;color:var(--accent);font-size:.92rem}
+  details.formula h4{margin:12px 0 2px;font-size:.92rem}
+  details.formula p{margin:2px 0;font-size:.95rem}
+
+  /* ゲーム */
+  .hud{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .qno{font-weight:700;white-space:nowrap}
+  .prog{flex:1;height:8px;background:#e6e3da;border-radius:99px;overflow:hidden}
+  .prog div{height:100%;background:var(--accent);width:0;transition:width .3s}
+  .timer{font-variant-numeric:tabular-nums;font-size:1.3rem;font-weight:700;min-width:5.5em;text-align:right}
+  .timer.pause{color:var(--sub)}
+  .timer small{font-size:.7rem;font-weight:400;display:block;line-height:1;color:var(--sub)}
+  .tag{display:inline-block;font-size:.75rem;padding:2px 10px;border-radius:99px;background:#e8eef5;color:var(--accent);margin-bottom:8px}
+  .q{font-size:1.1rem;margin:0 0 18px}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .opt{display:flex;align-items:center;gap:10px;min-height:58px;padding:10px 14px;border:1.5px solid var(--line);
+    border-radius:12px;background:#fff;font:inherit;font-size:1.1rem;cursor:pointer;text-align:left;color:var(--ink)}
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt .no{font-size:.8rem;color:var(--sub);min-width:1.2em}
+  .opt.ok{border-color:var(--ok);background:var(--okbg)}.opt.ng{border-color:var(--ng);background:var(--ngbg)}
+  .opt:disabled{cursor:default}
+  .opt svg{display:block;width:100%;max-width:170px;height:auto}
+  .fb{margin-top:18px;padding:14px 16px;border-radius:12px;display:none}
+  .fb.show{display:block}.fb.ok{background:var(--okbg)}.fb.ng{background:var(--ngbg)}
+  .fb .head{font-weight:700;margin-bottom:6px}
+  .fb.ok .head{color:var(--ok)}.fb.ng .head{color:var(--ng)}
+  .exp p{margin:4px 0}
+  .actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+  #next{display:none}#next.show{display:inline-block}
+  .quit{margin-left:auto}
+  @media (max-width:520px){.opts{grid-template-columns:1fr}.stages{grid-template-columns:1fr}}
+  @media (max-width:520px){.opts.graphs{grid-template-columns:1fr 1fr}}
+
+  /* 結果 */
+  .res-top{text-align:center}
+  .res-stage{color:var(--sub);font-size:.9rem}
+  .res-pt{font-size:3.2rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--accent)}
+  .res-pt span{font-size:1.1rem;color:var(--sub);font-weight:400}
+  .bd{display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .bd div{background:var(--soft);border-radius:10px;padding:6px 14px;font-size:.9rem}
+  .bd b{font-size:1.15rem}
+  .res-score{font-size:.95rem;color:var(--sub);margin-top:6px}
+  .note{font-size:.78rem;color:var(--sub);margin-top:6px}
+  .rank{display:inline-block;margin-top:8px;padding:4px 16px;border-radius:99px;background:#e8eef5;color:var(--accent);font-weight:700}
+  .newbest{color:var(--gold);font-weight:700;margin-top:6px}
+  table{width:100%;border-collapse:collapse;margin:18px 0 6px;font-size:.92rem}
+  th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--sub);font-weight:400;font-size:.8rem}
+  td.mk{font-weight:700;text-align:center}td.mk.o{color:var(--ok)}td.mk.x{color:var(--ng)}
+  td.tm,th.tm{text-align:right;font-variant-numeric:tabular-nums}
+  .fbk h3{font-size:1rem;margin:20px 0 6px}
+  .fbk .adv{background:var(--soft);border-left:4px solid var(--accent);border-radius:6px;padding:8px 12px;margin:6px 0;font-size:.93rem}
+  .review{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+  .review summary{cursor:pointer;color:var(--accent)}
+  .review .rq{margin:4px 0 8px}.review .ra{color:var(--ok);font-weight:700}
+  .review svg{width:150px;height:auto;vertical-align:middle}
+  .res-btns{display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+
+  /* 先生用 */
+  textarea{width:100%;min-height:130px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 8px}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 14px;font:inherit;font-size:.88rem;cursor:pointer;color:var(--sub)}
+  .tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.9rem}
+  .rk{font-size:1.05rem}
+  .rk td,.rk th{padding:9px 8px;white-space:nowrap}
+  .rk{display:block;overflow-x:auto}
+  .rk tr.top1 td{background:#fff6dd}.rk tr.top2 td{background:#f3f3f3}.rk tr.top3 td{background:#fbefe6}
+  .rk .medal{font-weight:800}
+  .msg{font-size:.88rem;margin-top:8px}
+  .msg.err{color:var(--ng)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ========== タイトル（クラス・番号入力） ========== -->
+<section class="screen on" id="scTitle">
+  <div class="card title">
+    <div class="sub">数学Ⅰ　総復習</div>
+    <h1>総復習タイムアタック</h1>
+    <div class="big">全4ステージ　各100点満点（合計400点）</div>
+    <div class="login">
+      <select id="selC"><option value="">組</option></select>
+      <span>組</span>
+      <select id="selN"><option value="">番号</option></select>
+      <span>番</span>
+    </div>
+    <button class="btn main start" id="btnLogin" disabled>はじめる</button>
+    <p class="privacy">入力するのは組と出席番号だけです（名前は入力しません）。<br>記録はこの端末の中だけに保存され、インターネットには送信されません。</p>
+    <button class="link" id="toTeacher">先生用：ランキング集計</button>
+  </div>
+</section>
+
+<!-- ========== ステージ選択 ========== -->
+<section class="screen" id="scMenu">
+  <div class="who"><span>ようこそ</span><b id="whoName"></b><button class="btn sub" id="logout">番号を変更</button></div>
+  <div class="stages" id="stageList"></div>
+  <div class="total" id="totalBest"></div>
+
+  <div class="codebox">
+    <h3>提出コード</h3>
+    <div class="code" id="subCode">まだ記録がありません</div>
+    <div class="row">
+      <button class="btn main" id="openForm" style="padding:6px 14px;font-size:.88rem;display:none">フォームで提出</button>
+      <button class="btn main" id="copyCode" style="padding:6px 14px;font-size:.88rem">コピー</button>
+      <span class="small" id="copyMsg"></span>
+    </div>
+    <p class="small" style="margin:8px 0 0">各ステージのベスト記録がまとめて入っています。先生の指示に従って、このコードを提出してください。何度挑戦しても、ベスト記録だけが残ります。</p>
+  </div>
+
+  <details class="formula">
+    <summary>公式・ポイントを確認する</summary>
+    <h4>三角比（0° ≦ θ ≦ 180°）</h4>
+    <p>半径1の円周上の点 P(<i class="v">x</i>, <i class="v">y</i>) で　sin θ = <i class="v">y</i>，cos θ = <i class="v">x</i>，tan θ = <span class="fr"><span class="nu"><i class="v">y</i></span><span class="de"><i class="v">x</i></span></span></p>
+    <p>sin(180° − θ) = sin θ，cos(180° − θ) = −cos θ，tan(180° − θ) = −tan θ</p>
+    <p>sin²θ + cos²θ = 1，tan θ = <span class="fr"><span class="nu">sin θ</span><span class="de">cos θ</span></span>，1 + tan²θ = <span class="fr"><span class="nu">1</span><span class="de">cos²θ</span></span></p>
+    <h4>正弦定理・余弦定理</h4>
+    <p><span class="fr"><span class="nu"><i class="v">a</i></span><span class="de">sin <i class="v">A</i></span></span> = <span class="fr"><span class="nu"><i class="v">b</i></span><span class="de">sin <i class="v">B</i></span></span> = <span class="fr"><span class="nu"><i class="v">c</i></span><span class="de">sin <i class="v">C</i></span></span> = 2<i class="v">R</i></p>
+    <p><i class="v">a</i>² = <i class="v">b</i>² + <i class="v">c</i>² − 2<i class="v">bc</i> cos <i class="v">A</i>，cos <i class="v">A</i> = <span class="fr"><span class="nu"><i class="v">b</i>² + <i class="v">c</i>² − <i class="v">a</i>²</span><span class="de">2<i class="v">bc</i></span></span></p>
+  </details>
+</section>
+
+<!-- ========== ゲーム ========== -->
+<section class="screen" id="scGame">
+  <div class="hud">
+    <span class="qno" id="qno"></span>
+    <div class="prog"><div id="prog"></div></div>
+    <span class="timer" id="timer">0.0<small>秒</small></span>
+  </div>
+  <div class="card">
+    <span class="tag" id="tag"></span>
+    <div class="q" id="q"></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb"><div class="head" id="fbh"></div><div class="exp" id="exp"></div></div>
+    <div class="actions">
+      <button class="btn main" id="next">次の問題 →</button>
+      <button class="link quit" id="quit">やめる</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 結果 ========== -->
+<section class="screen" id="scResult">
+  <div class="card">
+    <div class="res-top">
+      <div class="res-stage" id="rStage"></div>
+      <div class="res-pt" id="rPt"></div>
+      <div class="bd" id="rBd"></div>
+      <div class="res-score" id="rScore"></div>
+      <div class="rank" id="rRank"></div>
+      <div class="newbest" id="rBest"></div>
+    </div>
+    <table><thead><tr><th>問</th><th>分野</th><th style="text-align:center">結果</th><th class="tm">時間</th></tr></thead><tbody id="rTable"></tbody></table>
+    <div class="fbk" id="rFb"></div>
+    <div class="res-btns">
+      <button class="btn main" id="retry">もう一度挑戦</button>
+      <button class="btn sub" id="toMenu">ステージ選択へ</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 先生用ランキング ========== -->
+<section class="screen" id="scTeacher">
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px">
+      <h2 style="margin:0;font-size:1.2rem">ランキング集計（先生用）</h2>
+      <button class="btn sub" id="tBack" style="margin-left:auto;padding:6px 12px;font-size:.85rem">戻る</button>
+    </div>
+    <p class="small">生徒の提出コードをまとめて貼り付けてください（Googleフォームの回答列などをそのままコピーしてOK。改行や余分な文字が混ざっていても読み取ります）。同じ生徒のコードが複数あるときは、ステージごとにベスト記録を採用します。</p>
+    <textarea id="tInput" placeholder="例）3-12_1:92:80_2:88:150_3:71:95_4:80:260_x1y2"></textarea>
+    <div class="tctl" style="margin-top:8px">
+      <label><input type="checkbox" id="tLocal" checked> この端末の記録も含める</label>
+      <button class="btn main" id="tRun">集計する</button>
+    </div>
+    <div class="msg" id="tMsg"></div>
+
+    <div id="tResult" style="display:none">
+      <div class="tabs" id="tTabs"></div>
+      <div class="tctl">
+        <label>組：<select id="tClass"></select></label>
+        <label>表示：<select id="tTop"><option value="10">上位10人</option><option value="20">上位20人</option><option value="999">全員</option></select></label>
+        <button class="btn sub" id="tCopy" style="padding:6px 12px;font-size:.85rem">表をコピー（Excel/スプレッドシート用）</button>
+      </div>
+      <table class="rk"><thead id="tHead"></thead><tbody id="tBody"></tbody></table>
+    </div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:22px 0 14px">
+    <p class="small">共用端末で使い終わったら、この端末に保存された全員分の記録を消去できます。</p>
+    <button class="btn danger" id="tClear">この端末の記録をすべて消去</button>
+  </div>
+</section>
+
+</div>
+
+<script>
+"use strict";
+/* ================= 数の表現：(n/d)·√s ================= */
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1};
+function sqrtSimp(n){let o=1,i=n;for(let p=2;p*p<=i;p++){while(i%(p*p)===0){i/=p*p;o*=p}}return[o,i]}
+function S(n,d=1,s=1){
+  const[o,i]=sqrtSimp(s);n*=o;s=i;
+  if(d<0){n=-n;d=-d}
+  if(n===0)return{n:0,d:1,s:1};
+  const g=gcd(n,d);return{n:n/g,d:d/g,s};
+}
+const mul=(x,y)=>S(x.n*y.n,x.d*y.d,x.s*y.s);
+const div=(x,y)=>S(x.n*y.d,x.d*y.n*y.s,x.s*y.s);
+const val=x=>x.n/x.d*Math.sqrt(x.s);
+const sqrtQ=r=>S(1,r.d,r.n*r.d);            // 有理数 r ≧ 0 の平方根
+const oneMinus=r=>S(r.d-r.n,r.d);           // 1 − r（r は有理数）
+const onePlus=r=>S(r.d+r.n,r.d);
+
+/* ================= 表示 ================= */
+const rad=s=>`<span class="rt">√<span class="rd">${s}</span></span>`;
+const frac=(a,b)=>`<span class="fr"><span class="nu">${a}</span><span class="de">${b}</span></span>`;
+const v=l=>`<i class="v">${l}</i>`;
+const TH=v('θ');
+function fmt(x){
+  const neg=x.n<0,a=Math.abs(x.n);
+  const top=x.s===1?`${a}`:(a===1?rad(x.s):`${a}${rad(x.s)}`);
+  return(neg?'−':'')+(x.d===1?top:frac(top,x.d));
+}
+const par=x=>x.n<0?`(${fmt(x)})`:fmt(x);
+const parP=x=>(x.s>1&&x.n!==1)||x.d>1||x.n<0?`(${fmt(x)})`:fmt(x);
+const N=n=>n<0?`−${-n}`:`${n}`;
+const sg=n=>n===0?'':(n>0?` + ${n}`:` − ${-n}`);
+const deg=x=>`${x}°`;
+
+/* ================= 乱数 ================= */
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const nz=(a,b)=>{let x;do{x=ri(a,b)}while(x===0);return x};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ================= 選択肢づくり ================= */
+function surdOptions(ans,cands,allowNeg=false){
+  const key=x=>val(x).toFixed(6);
+  const seen=new Set([key(ans)]),out=[ans];
+  const mults=[S(1,1,2),S(1,1,3),S(2),S(1,2),S(3,2),S(2,3),S(1,2,2),S(1,3,3)];
+  if(allowNeg)mults.push(S(-1),S(-2),S(-1,2));
+  const generic=shuffle(mults).map(r=>mul(ans,r));
+  for(const c of [...cands,...generic]){
+    if(out.length>=4)break;
+    if(!c||!isFinite(val(c))||c.d>40||c.s>300)continue;
+    if(!allowNeg&&!(val(c)>0))continue;
+    if(val(c)===0&&val(ans)!==0&&!allowNeg)continue;
+    const k=key(c);if(seen.has(k))continue;seen.add(k);out.push(c);
+  }
+  const sh=shuffle(out);
+  return{opts:sh.map(fmt),ans:sh.indexOf(ans)};
+}
+function strOptions(ans,cands){
+  const out=[ans];
+  for(const c of cands){if(out.length>=4)break;if(c&&!out.includes(c))out.push(c)}
+  const sh=shuffle(out);return{opts:sh,ans:sh.indexOf(ans)};
+}
+
+/* ================================================================
+   ステージ① 三角比の値
+   ================================================================ */
+const TV={
+  '0':['0',0],'1':['1',1],'-1':['−1',-1],
+  '1/2':[frac('1','2')],'-1/2':['−'+frac('1','2')],
+  '1/r2':[frac('1',rad(2))],'-1/r2':['−'+frac('1',rad(2))],
+  'r3/2':[frac(rad(3),'2')],'-r3/2':['−'+frac(rad(3),'2')],
+  'r3':[rad(3)],'-r3':['−'+rad(3)],
+  '1/r3':[frac('1',rad(3))],'-1/r3':['−'+frac('1',rad(3))]
+};
+const tv=k=>TV[k][0];
+const negK=k=>k==='0'?'0':(k[0]==='-'?k.slice(1):'-'+k);
+const SINK={0:'0',30:'1/2',45:'1/r2',60:'r3/2',90:'1',120:'r3/2',135:'1/r2',150:'1/2',180:'0'};
+const COSK={0:'1',30:'r3/2',45:'1/r2',60:'1/2',90:'0',120:'-1/2',135:'-1/r2',150:'-r3/2',180:'-1'};
+const TANK={0:'0',30:'1/r3',45:'1',60:'r3',120:'-r3',135:'-1',150:'-1/r3',180:'0'};
+const FN={sin:SINK,cos:COSK,tan:TANK};
+const ANG9=[0,30,45,60,90,120,135,150,180];
+
+function genTrigValue(f){
+  const tbl=FN[f];
+  const th=pick(Object.keys(tbl).map(Number));
+  const k=tbl[th];
+  const cands=[negK(k)];
+  for(const g of ['sin','cos','tan'])if(g!==f&&FN[g][th]!==undefined)cands.push(FN[g][th]);
+  if(tbl[180-th]!==undefined)cands.push(tbl[180-th]);
+  if(th<=90&&tbl[90-th]!==undefined)cands.push(tbl[90-th]);
+  shuffle(Object.keys(TV)).forEach(x=>cands.push(x));
+  const keys=[k];for(const c of cands){if(keys.length>=4)break;if(!keys.includes(c))keys.push(c)}
+  const sh=shuffle(keys);
+  const q=`${f} ${deg(th)} の値を求めよ。`;
+  let e=`<p>半径1の円周上で、角 ${deg(th)} の点は P(${tv(COSK[th])}, ${tv(SINK[th])})</p>`;
+  e+=`<p>${f==='sin'?'sin は P の y 座標':f==='cos'?'cos は P の x 座標':'tan は <span class="fr"><span class="nu">y 座標</span><span class="de">x 座標</span></span>'}</p>`;
+  if(th>90&&th<180){
+    const s=f==='sin'?'':'−';
+    e+=`<p>または　${deg(th)} = 180° − ${deg(180-th)} より ${f} ${deg(th)} = ${s}${f} ${deg(180-th)}</p>`;
+  }
+  e+=`<p>よって ${f} ${deg(th)} = <b>${tv(k)}</b></p>`;
+  return{tag:'三角比の値',q,opts:sh.map(tv),ans:sh.indexOf(k),e};
+}
+
+/* 相互関係 */
+const IDC=[ // [sin, |cos|, 簡単な tan か]
+  [S(3,5),S(4,5),1],[S(4,5),S(3,5),1],[S(5,13),S(12,13),1],[S(12,13),S(5,13),1],
+  [S(2,5,5),S(1,5,5),1],[S(1,5,5),S(2,5,5),1],
+  [S(1,3),S(2,3,2),0],[S(2,3,2),S(1,3),0],[S(2,3),S(1,3,5),0],[S(1,3,5),S(2,3),0],
+  [S(1,4),S(1,4,15),0],[S(3,4),S(1,4,7),0]
+];
+function genTrigIdentity(){
+  const type=pick(['sin→cos','sin→tan','cos→sin','cos→tan','tan→cos','tan→sin']);
+  const pool=type.startsWith('tan')?IDC.filter(c=>c[2]):IDC;
+  const[s,ca]=pick(pool);const obt=Math.random()<0.5;
+  const c=obt?mul(ca,S(-1)):ca, t=div(s,c);
+  const[gv,ask]=type.split('→');
+  const given={sin:s,cos:c,tan:t}[gv],ans={sin:s,cos:c,tan:t}[ask];
+  const range=gv==='sin'?`${TH} は${obt?'鈍角':'鋭角'}とする。`:`0° ≦ ${TH} ≦ 180° とする。`;
+  const q=`${range}${gv} ${TH} = ${fmt(given)} のとき、${ask} ${TH} の値を求めよ。`;
+  let e='';
+  if(gv==='sin'){
+    const c2=oneMinus(mul(s,s));
+    e+=`<p>sin²${TH} + cos²${TH} = 1 より　cos²${TH} = 1 − ${parP(s)}² = ${fmt(c2)}</p>`;
+    e+=`<p>${TH} は${obt?'鈍角なので cos '+TH+' &lt; 0':'鋭角なので cos '+TH+' &gt; 0'}　よって cos ${TH} = ${fmt(c)}</p>`;
+    if(ask==='tan')e+=`<p>tan ${TH} = ${frac('sin '+TH,'cos '+TH)} = ${frac(fmt(s),fmt(c))} = ${fmt(t)}</p>`;
+  }else if(gv==='cos'){
+    const s2=oneMinus(mul(c,c));
+    e+=`<p>sin²${TH} + cos²${TH} = 1 より　sin²${TH} = 1 − ${parP(c)}² = ${fmt(s2)}</p>`;
+    e+=`<p>0° ≦ ${TH} ≦ 180° では sin ${TH} ≧ 0　よって sin ${TH} = ${fmt(s)}</p>`;
+    if(ask==='tan')e+=`<p>tan ${TH} = ${frac('sin '+TH,'cos '+TH)} = ${frac(fmt(s),fmt(c))} = ${fmt(t)}</p>`;
+  }else{
+    const x=onePlus(mul(t,t));
+    e+=`<p>1 + tan²${TH} = ${frac('1','cos²'+TH)} より　${frac('1','cos²'+TH)} = 1 + ${parP(t)}² = ${fmt(x)}</p>`;
+    e+=`<p>cos²${TH} = ${fmt(S(x.d,x.n))}。tan ${TH} ${obt?'&lt; 0 より '+TH+' は鈍角で cos '+TH+' &lt; 0':'&gt; 0 より '+TH+' は鋭角で cos '+TH+' &gt; 0'}</p>`;
+    e+=`<p>よって cos ${TH} = ${fmt(c)}</p>`;
+    if(ask==='sin')e+=`<p>sin ${TH} = tan ${TH} × cos ${TH} = ${fmt(t)} × ${par(c)} = ${fmt(s)}</p>`;
+  }
+  e+=`<p>答え　${ask} ${TH} = <b>${fmt(ans)}</b></p>`;
+  const cands=[mul(ans,S(-1)),given,div(S(1),ans),ask!=='tan'?mul(ans,ans):null,{sin:s,cos:c,tan:t}[['sin','cos','tan'].find(z=>z!==gv&&z!==ask)]];
+  const o=surdOptions(ans,cands,true);
+  return{tag:'三角比の相互関係',q,...o,e};
+}
+
+/* ================================================================
+   ステージ② 三角比の値から角度
+   ================================================================ */
+function linForms(k,F){
+  const r2=rad(2),r3=rad(3);
+  return({'1/2':[`2 ${F} = 1`,`2 ${F} − 1 = 0`],'-1/2':[`2 ${F} = −1`,`2 ${F} + 1 = 0`],
+    '1/r2':[`${r2} ${F} = 1`,`${r2} ${F} − 1 = 0`],'-1/r2':[`${r2} ${F} = −1`,`${r2} ${F} + 1 = 0`],
+    'r3/2':[`2 ${F} = ${r3}`,`2 ${F} − ${r3} = 0`],'-r3/2':[`2 ${F} = −${r3}`,`2 ${F} + ${r3} = 0`],
+    'r3':[`${F} − ${r3} = 0`],'-r3':[`${F} + ${r3} = 0`],
+    '1/r3':[`${r3} ${F} = 1`,`${r3} ${F} − 1 = 0`],'-1/r3':[`${r3} ${F} = −1`,`${r3} ${F} + 1 = 0`],
+    '1':[`${F} − 1 = 0`],'-1':[`${F} + 1 = 0`],'0':[`${F} = 0`]})[k];
+}
+const angSet=(f,k)=>Object.keys(FN[f]).map(Number).filter(a=>FN[f][a]===k);
+const setStr=a=>a.length?a.map(deg).join('，'):null;
+function genTrigAngle(f){
+  const th=pick(Object.keys(FN[f]).map(Number));
+  const k=FN[f][th];
+  const sol=angSet(f,k);
+  const F=`${f} ${TH}`;
+  const linear=Math.random()<0.5&&k!=='0';
+  const eq=linear?pick(linForms(k,F)):`${F} = ${tv(k)}`;
+  const q=`0° ≦ ${TH} ≦ 180° のとき、${eq} を満たす ${TH} を求めよ。`;
+  const ans=setStr(sol);
+  const cands=[];
+  if(sol.length===2)sol.forEach(a=>cands.push(deg(a)));
+  cands.push(setStr(angSet(f,negK(k))));
+  for(const g of ['sin','cos','tan'])if(g!==f)cands.push(setStr(angSet(g,k)));
+  if(sol.length===1&&sol[0]!==90){const pr=[sol[0],180-sol[0]].sort((a,b)=>a-b);cands.push(setStr(pr))}
+  shuffle(ANG9.filter(a=>!sol.includes(a))).forEach(a=>cands.push(deg(a)));
+  const o=strOptions(ans,cands);
+  let e='';
+  if(linear)e+=`<p>${eq} より　${F} = ${tv(k)}</p>`;
+  if(f==='sin')e+=`<p>半径1の半円上で、<b>y 座標が ${tv(k)}</b> となる点を探す。</p>`;
+  else if(f==='cos')e+=`<p>半径1の半円上で、<b>x 座標が ${tv(k)}</b> となる点を探す。</p>`;
+  else e+=`<p>直線 x = 1 上の点 T(1, ${tv(k)}) をとり、直線 OT と半円の交点を探す。</p>`;
+  if(sol.length===2&&f==='sin')e+=`<p>sin は ${TH} と 180° − ${TH} で同じ値になるので、答えは2つ。</p>`;
+  e+=`<p>よって ${TH} = <b>${ans}</b></p>`;
+  return{tag:`角度（${f}）`,q,...o,e};
+}
+
+/* ================================================================
+   ステージ③ 正弦定理・余弦定理
+   ================================================================ */
+const ANG=[30,45,60,90,120,135,150];
+const SIN={30:S(1,2),45:S(1,2,2),60:S(1,2,3),90:S(1),120:S(1,2,3),135:S(1,2,2),150:S(1,2)};
+const COS={30:S(1,2,3),45:S(1,2,2),60:S(1,2),90:S(0),120:S(-1,2),135:S(-1,2,2),150:S(-1,2,3)};
+const up=l=>l.toUpperCase();
+const tri=`△ABC において、`;
+
+function genSineSide(){
+  for(;;){
+    const A=pick(ANG),B=pick(ANG);if(A+B>=180||A===B)continue;
+    const b=S(ri(1,10),1,pick([1,1,2,3]));
+    const a=div(mul(b,SIN[A]),SIN[B]);
+    if(a.d!==1||a.n>16)continue;
+    const[P,Q,R]=shuffle(['a','b','c']),C=180-A-B,useC=Math.random()<0.35;
+    const given=useC?`${v(up(R))} = ${deg(C)}`:`${v(up(Q))} = ${deg(B)}`;
+    const q=`${tri}${v(P)} = ${fmt(a)}，${v(up(P))} = ${deg(A)}，${given} のとき、${v(Q)} を求めよ。`;
+    let e='';
+    if(useC)e+=`<p>${v(up(Q))} = 180° − (${deg(A)} + ${deg(C)}) = ${deg(B)}</p>`;
+    e+=`<p>正弦定理より ${frac(v(P),'sin '+v(up(P)))} = ${frac(v(Q),'sin '+v(up(Q)))}</p>`;
+    e+=`<p>よって ${v(Q)} = ${frac(v(P)+' sin '+v(up(Q)),'sin '+v(up(P)))} = ${frac(fmt(a)+'×'+fmt(SIN[B]),fmt(SIN[A]))} = <b>${fmt(b)}</b></p>`;
+    const o=surdOptions(b,[div(mul(a,SIN[A]),SIN[B]),mul(a,SIN[B]),div(a,SIN[B])]);
+    return{tag:'正弦定理（辺）',q,...o,e};
+  }
+}
+function genCircR(){
+  for(;;){
+    const A=pick(ANG),R=S(ri(1,8),1,pick([1,1,2,3]));
+    const a=mul(S(2),mul(R,SIN[A]));
+    if(a.d!==1||a.n>16)continue;
+    const P=pick(['a','b','c']);
+    const q=`${tri}${v(P)} = ${fmt(a)}，${v(up(P))} = ${deg(A)} のとき、外接円の半径 ${v('R')} を求めよ。`;
+    const e=`<p>正弦定理より ${frac(v(P),'sin '+v(up(P)))} = 2${v('R')}</p>
+      <p>よって ${v('R')} = ${frac(v(P),'2 sin '+v(up(P)))} = ${frac(fmt(a),'2×'+fmt(SIN[A]))} = <b>${fmt(R)}</b></p>`;
+    const o=surdOptions(R,[div(a,SIN[A]),mul(S(1,2),mul(a,SIN[A])),mul(a,SIN[A])]);
+    return{tag:'正弦定理（外接円）',q,...o,e};
+  }
+}
+function genSideFromR(){
+  for(;;){
+    const A=pick(ANG),R=S(ri(1,8),1,pick([1,1,2,3]));
+    const a=mul(S(2),mul(R,SIN[A]));
+    if(a.d!==1||a.n>16)continue;
+    const P=pick(['a','b','c']);
+    const q=`${tri}外接円の半径 ${v('R')} = ${fmt(R)}，${v(up(P))} = ${deg(A)} のとき、${v(P)} を求めよ。`;
+    const e=`<p>正弦定理より ${frac(v(P),'sin '+v(up(P)))} = 2${v('R')}</p>
+      <p>よって ${v(P)} = 2${v('R')} sin ${v(up(P))} = 2×${fmt(R)}×${fmt(SIN[A])} = <b>${fmt(a)}</b></p>`;
+    const o=surdOptions(a,[mul(R,SIN[A]),div(mul(S(2),R),SIN[A]),div(R,SIN[A])]);
+    return{tag:'正弦定理（外接円）',q,...o,e};
+  }
+}
+function genSineAngle(){
+  for(;;){
+    const A=pick(ANG),B=pick(ANG);if(A+B>=180||A===B)continue;
+    const b=S(ri(1,10),1,pick([1,1,2,3]));
+    const a=div(mul(b,SIN[A]),SIN[B]);
+    if(a.d!==1||a.n>16)continue;
+    const[P,Q]=shuffle(['a','b','c']);
+    const valid=[...new Set([B,180-B])].filter(x=>A+x<180).sort((x,y)=>x-y);
+    const ansStr=valid.map(deg).join('，');
+    const q=`${tri}${v(P)} = ${fmt(a)}，${v(Q)} = ${fmt(b)}，${v(up(P))} = ${deg(A)} のとき、${v(up(Q))} を求めよ。`;
+    let e=`<p>正弦定理より ${frac(v(Q),'sin '+v(up(Q)))} = ${frac(v(P),'sin '+v(up(P)))}</p>
+      <p>sin ${v(up(Q))} = ${frac(v(Q)+' sin '+v(up(P)),v(P))} = ${frac(fmt(b)+'×'+fmt(SIN[A]),fmt(a))} = ${fmt(SIN[B])}</p>
+      <p>0° &lt; ${v(up(Q))} &lt; 180° − ${deg(A)} = ${deg(180-A)} より、${v(up(Q))} = <b>${ansStr}</b></p>`;
+    if(B!==90&&valid.length===1)e+=`<p style="color:#6b6f76;font-size:.9em">※ ${deg(180-B)} は ${v(up(P))} との和が 180° 以上になるので不適。</p>`;
+    const cands=[];
+    if(valid.length===2)cands.push(deg(valid[0]),deg(valid[1]));
+    else if(B!==90){const pr=[B,180-B].sort((x,y)=>x-y);cands.push(pr.map(deg).join('，'))}
+    shuffle(ANG.filter(x=>!valid.includes(x))).forEach(x=>cands.push(deg(x)));
+    const o=strOptions(ansStr,cands);
+    return{tag:'正弦定理（角）',q,...o,e};
+  }
+}
+function cosTriangle(){
+  for(;;){
+    const A=pick([30,45,60,120,135,150]);
+    const t={60:1,120:1,45:2,135:2,30:3,150:3}[A];
+    const bn=ri(1,8),k=ri(1,7);
+    const b=S(bn),c=S(k,1,t);
+    const cross=(A<90?1:-1)*bn*k*t;
+    const Nn=bn*bn+k*k*t-cross;
+    if(Nn<=0||Nn>200)continue;
+    if(t===1&&bn===k&&A===60)continue;
+    return{A,b,c,bn,k,t,cross,N:Nn,a:S(1,1,Nn)};
+  }
+}
+function genCosSide(){
+  const T=cosTriangle();
+  const[X,Y,Z]=shuffle(['a','b','c']);
+  const[yv,zv]=Math.random()<0.5?[T.b,T.c]:[T.c,T.b];
+  const sq=x=>Math.round(val(x)**2);
+  const q=`${tri}${v(Y)} = ${fmt(yv)}，${v(Z)} = ${fmt(zv)}，${v(up(X))} = ${deg(T.A)} のとき、${v(X)} を求めよ。`;
+  const e=`<p>余弦定理より<br>${v(X)}² = ${v(Y)}² + ${v(Z)}² − 2${v(Y)}${v(Z)} cos ${v(up(X))}</p>
+    <p>　= ${parP(yv)}² + ${parP(zv)}² − 2×${fmt(yv)}×${fmt(zv)}×${par(COS[T.A])}</p>
+    <p>　= ${sq(yv)} + ${sq(zv)} ${T.cross>=0?'−':'+'} ${Math.abs(T.cross)} = ${T.N}</p>
+    <p>${v(X)} &gt; 0 より ${v(X)} = <b>${fmt(T.a)}</b></p>`;
+  const M1=T.N+2*T.cross,M2=T.bn**2+T.k*T.k*T.t;
+  const o=surdOptions(T.a,[S(1,1,M1),S(1,1,M2),S(T.N)]);
+  return{tag:'余弦定理（辺）',q,...o,e};
+}
+function genCosAngle(){
+  const T=cosTriangle();
+  const[X,Y,Z]=shuffle(['a','b','c']);
+  const[yv,zv]=Math.random()<0.5?[T.b,T.c]:[T.c,T.b];
+  const sq=x=>Math.round(val(x)**2);
+  const q=`${tri}${v(X)} = ${fmt(T.a)}，${v(Y)} = ${fmt(yv)}，${v(Z)} = ${fmt(zv)} のとき、${v(up(X))} を求めよ。`;
+  const den=mul(S(2),mul(yv,zv));
+  const e=`<p>余弦定理より<br>cos ${v(up(X))} = ${frac(v(Y)+'² + '+v(Z)+'² − '+v(X)+'²','2'+v(Y)+v(Z))}
+    = ${frac(sq(yv)+' + '+sq(zv)+' − '+T.N,'2×'+fmt(yv)+'×'+fmt(zv))}
+    = ${frac(N(T.cross),fmt(den))} = ${fmt(COS[T.A])}</p>
+    <p>0° &lt; ${v(up(X))} &lt; 180° より ${v(up(X))} = <b>${deg(T.A)}</b></p>`;
+  const cands=[deg(180-T.A),...shuffle(ANG.filter(x=>x!==T.A&&x!==180-T.A)).map(deg)];
+  const o=strOptions(deg(T.A),cands);
+  return{tag:'余弦定理（角）',q,...o,e};
+}
+
+/* ================================================================
+   ステージ定義
+   ================================================================ */
+const SN='①②③④';
+const SIDS=[1,2,3,4];
+const STAGES={
+  1:{name:'三角比の値',ds:'0°〜180° の sin・cos・tan',n:10,speed:[8,40],
+     make:()=>[...Array(4)].map(()=>()=>genTrigValue('sin')).concat([...Array(3)].map(()=>()=>genTrigValue('cos')),[...Array(3)].map(()=>()=>genTrigValue('tan'))),
+     hint:`鈍角では <b>sin は正、cos・tan は負</b>。符号を先に決めてから値を考えると速く正確に解けます。`},
+  2:{name:'三角比の相互関係',ds:'1つの値から残りの値を求める',n:6,speed:[20,80],
+     make:()=>[...Array(6)].map(()=>genTrigIdentity),
+     hint:`sin²θ + cos²θ = 1 などで2乗の値を出したら、最後に <b>θ が鋭角か鈍角かで符号を決める</b>。`},
+  3:{name:'角度を求める',ds:'三角比の値から θ を求める',n:10,speed:[8,40],
+     make:()=>[...Array(4)].map(()=>()=>genTrigAngle('sin')).concat([...Array(3)].map(()=>()=>genTrigAngle('cos')),[...Array(3)].map(()=>()=>genTrigAngle('tan'))),
+     hint:`0° ≦ θ ≦ 180° では、<b>sin だけ解が2つ</b>になることがあります（θ と 180° − θ）。`},
+  4:{name:'正弦定理・余弦定理',ds:'辺・角・外接円の半径',n:6,speed:[15,75],
+     make:()=>[genSineSide,pick([genCircR,genSideFromR]),genSineAngle,genCosSide,genCosAngle,pick([genCosSide,genCosAngle,genSineSide])],
+     hint:`迷ったら：<b>辺と向かいの角のペアがわかっている → 正弦定理</b>、<b>2辺とその間の角／3辺 → 余弦定理</b>。`}
+};
+function makeSet(st){
+  const gens=shuffle(STAGES[st].make()),set=[],seen=new Set();
+  for(const g of gens){let p,tries=0;do{p=g();tries++}while(seen.has(p.q)&&tries<30);seen.add(p.q);set.push(p)}
+  return set;
+}
+
+/* ---------- 分野別アドバイス ---------- */
+const ADV={
+  '三角比の値':`半径1の円周上の点 P(cos θ, sin θ) で考えよう。鈍角は 180° − θ の公式で鋭角に直す：<b>sin はそのまま、cos と tan は符号が − になる</b>。`,
+  '三角比の相互関係':`sin²θ + cos²θ = 1，tan θ = sin θ / cos θ，1 + tan²θ = 1/cos²θ を使う。最後に<b>符号の確認</b>：0° 〜 180° で sin は常に 0 以上、鈍角では cos と tan が負。`,
+  '角度（sin）':`sin θ = k（0 &lt; k &lt; 1）の解は <b>θ と 180° − θ の2つ</b>。sin θ = 1 なら 90°、sin θ = 0 なら 0° と 180°。`,
+  '角度（cos）':`cos θ は x 座標。0° 〜 180° では解は1つで、<b>負の値なら鈍角</b>。`,
+  '角度（tan）':`tan θ は直線 x = 1 上の点 T(1, k) で考える。解は1つで、<b>負の値なら鈍角</b>（90° では tan は定義されない）。`,
+  '正弦定理（辺）':`${frac(v('a'),'sin '+v('A'))} = ${frac(v('b'),'sin '+v('B'))} のように、<b>辺とその向かいの角</b>をペアにして式を立てよう。分母と分子を逆にしていないか確認を。`,
+  '正弦定理（外接円）':`${frac(v('a'),'sin '+v('A'))} = 2${v('R')} の <b>「2」を忘れない</b>こと。`,
+  '正弦定理（角）':`sin の値から角を求めるときは、<b>θ と 180° − θ の2つが候補</b>。残りの角との和が 180° 未満か確かめよう。`,
+  '余弦定理（辺）':`${v('a')}² = ${v('b')}² + ${v('c')}² − 2${v('bc')} cos ${v('A')}。鈍角のときは cos が負なので <b>−2${v('bc')} cos ${v('A')} がプラス</b>になる。最後に √ をとる。`,
+  '余弦定理（角）':`cos ${v('A')} = ${frac(v('b')+'² + '+v('c')+'² − '+v('a')+'²','2'+v('bc'))}。<b>求める角の向かいの辺を引く</b>。cos が負なら鈍角。`
+};
+
+/* ================================================================
+   保存（この端末の localStorage のみ）
+   ================================================================ */
+/* ▼ 提出フォームの「事前入力URL」を貼り付けると「フォームで提出」ボタンが表示されます。
+     （フォーム作成スクリプトの実行ログに出る URL。末尾が entry.数字=CODE の形）
+     空のままなら、生徒はコードをコピーして先生指定の方法で提出します。 */
+const FORM_PREFILL_URL='';
+
+const DBKEY='suugaku1_sougou_v1';
+const store={
+  load(){try{return JSON.parse(localStorage.getItem(DBKEY))||{rec:{}}}catch(e){return{rec:{}}}},
+  save(d){try{localStorage.setItem(DBKEY,JSON.stringify(d))}catch(e){}}
+};
+let DB=store.load();if(!DB.rec)DB.rec={};
+let me=null; // {c, n}
+const sid=(c,n)=>`${c}-${n}`;
+function isBetter(nw,old){return!old||nw.pt>old.pt||(nw.pt===old.pt&&nw.time<old.time)}
+
+/* 提出コード：組-番号_ステージ:点:秒..._チェック */
+const SALT='m1-sougou-2026';
+function hash(s){let h=0x811c9dc5;for(const ch of s+SALT){h^=ch.charCodeAt(0);h=Math.imul(h,0x01000193)}return(h>>>0).toString(36).padStart(4,'0').slice(-4)}
+function buildCode(c,n){
+  const r=DB.rec[sid(c,n)]||{};
+  const parts=SIDS.filter(s=>r[s]).map(s=>`_${s}:${r[s].pt}:${Math.round(r[s].time/1000)}`).join('');
+  if(!parts)return null;
+  const body=`${c}-${n}${parts}`;
+  return`${body}_${hash(body)}`;
+}
+
+/* ================================================================
+   画面制御
+   ================================================================ */
+const $=id=>document.getElementById(id);
+const fmtT=ms=>(ms/1000).toFixed(1);
+const mmss=sec=>`${Math.floor(sec/60)}:${String(Math.round(sec%60)).padStart(2,'0')}`;
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));window.scrollTo(0,0)}
+
+/* --- タイトル --- */
+for(let i=1;i<=12;i++)$('selC').insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`);
+for(let i=1;i<=45;i++)$('selN').insertAdjacentHTML('beforeend',`<option value="${i}">${i}</option>`);
+if(DB.last){$('selC').value=DB.last.c;$('selN').value=DB.last.n}
+const chkLogin=()=>{$('btnLogin').disabled=!($('selC').value&&$('selN').value)};
+$('selC').onchange=$('selN').onchange=chkLogin;chkLogin();
+$('btnLogin').onclick=()=>{
+  me={c:+$('selC').value,n:+$('selN').value};
+  DB.last=me;store.save(DB);renderMenu();show('scMenu');
+};
+$('logout').onclick=()=>show('scTitle');
+
+/* --- メニュー --- */
+function renderMenu(){
+  $('whoName').textContent=`${me.c}組 ${me.n}番`;
+  const r=DB.rec[sid(me.c,me.n)]||{};
+  $('stageList').innerHTML=SIDS.map(s=>{
+    const st=STAGES[s],b=r[s];
+    return`<button class="stage" data-s="${s}"><div class="no">STAGE ${SN[s-1]}</div><div class="nm">${st.name}</div><div class="ds">${st.ds}（${st.n}問）</div>
+      <div class="bs">${b?`ベスト <b>${b.pt}</b>点（${b.score}/${st.n}・${fmtT(b.time)}秒）`:'未挑戦'}</div></button>`;
+  }).join('');
+  $('stageList').querySelectorAll('.stage').forEach(b=>b.onclick=()=>startGame(+b.dataset.s));
+  const tot=SIDS.reduce((a,s)=>a+(r[s]?r[s].pt:0),0),done=SIDS.filter(s=>r[s]).length;
+  $('totalBest').innerHTML=done?`合計ベスト <b>${tot}</b> / 400点（${done}/4 ステージ）`:'好きなステージから挑戦しよう（全4ステージ）';
+  const code=buildCode(me.c,me.n);
+  $('subCode').textContent=code||'まだ記録がありません';
+  $('copyCode').disabled=!code;$('copyMsg').textContent='';
+  const okUrl=/^https:\/\/docs\.google\.com\/forms\/.+=CODE$/.test(FORM_PREFILL_URL);
+  $('openForm').style.display=okUrl?'':'none';$('openForm').disabled=!code;
+}
+$('openForm').onclick=()=>{
+  const code=buildCode(me.c,me.n);if(!code)return;
+  window.open(FORM_PREFILL_URL.replace(/CODE$/,encodeURIComponent(code)),'_blank','noopener');
+};
+$('copyCode').onclick=async()=>{
+  const t=$('subCode').textContent;
+  try{await navigator.clipboard.writeText(t);$('copyMsg').textContent='コピーしました'}
+  catch(e){const r=document.createRange();r.selectNodeContents($('subCode'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('copyMsg').textContent='選択しました。長押し／Ctrl+C でコピーしてください'}
+};
+
+/* --- ゲーム --- */
+let stage=1,set=[],idx=0,results=[],answered=false,elapsed=0,qStart=0,running=false,raf=0;
+function tick(){
+  const now=running?elapsed+(performance.now()-qStart):elapsed;
+  $('timer').innerHTML=`${fmtT(now)}<small>${running?'秒':'一時停止中'}</small>`;
+  $('timer').classList.toggle('pause',!running);
+  if(running)raf=requestAnimationFrame(tick);
+}
+function startTimer(){qStart=performance.now();running=true;cancelAnimationFrame(raf);tick()}
+function stopTimer(){const d=performance.now()-qStart;elapsed+=d;running=false;cancelAnimationFrame(raf);tick();return d}
+
+function startGame(s){stage=s;set=makeSet(s);idx=0;results=[];elapsed=0;show('scGame');loadQ()}
+function loadQ(){
+  const cur=set[idx];answered=false;
+  $('qno').textContent=`${SN[stage-1]} ${idx+1} / ${set.length}`;
+  $('prog').style.width=(idx/set.length*100)+'%';
+  $('tag').textContent=cur.tag;
+  $('q').innerHTML=cur.q;
+  $('opts').innerHTML='';
+  $('opts').classList.toggle('graphs',!!cur.graph);
+  cur.opts.forEach((h,i)=>{
+    const b=document.createElement('button');
+    b.className='opt';b.innerHTML=`<span class="no">${'①②③④'[i]}</span><span style="flex:1">${h}</span>`;
+    b.onclick=()=>answer(i,b);$('opts').appendChild(b);
+  });
+  $('fb').className='fb';$('next').classList.remove('show');
+  $('next').textContent=idx===set.length-1?'結果を見る →':'次の問題 →';
+  startTimer();
+}
+function answer(i,btn){
+  if(answered)return;answered=true;
+  const t=stopTimer(),cur=set[idx],ok=i===cur.ans;
+  results.push({tag:cur.tag,ok,t,q:cur.q,a:cur.opts[cur.ans],e:cur.e});
+  [...$('opts').children].forEach((b,j)=>{b.disabled=true;if(j===cur.ans)b.classList.add('ok')});
+  if(!ok)btn.classList.add('ng');
+  $('prog').style.width=((idx+1)/set.length*100)+'%';
+  $('fbh').textContent=ok?'正解！':'不正解…  正解は '+'①②③④'[cur.ans];
+  $('exp').innerHTML=cur.e;
+  $('fb').className='fb show '+(ok?'ok':'ng');
+  $('next').classList.add('show');
+  $('next').focus({preventScroll:true});
+}
+function next(){idx++;if(idx<set.length)loadQ();else finish()}
+$('next').onclick=next;
+$('quit').onclick=()=>{if(confirm('このステージをやめますか？（記録は残りません）')){running=false;cancelAnimationFrame(raf);renderMenu();show('scMenu')}};
+
+/* --- 結果 --- */
+function finish(){
+  const st=STAGES[stage];
+  const score=results.filter(r=>r.ok).length,time=elapsed,avg=time/set.length/1000;
+  const accPt=Math.round(70*score/set.length);
+  const[full,zero]=st.speed;
+  const spdPt=Math.round(30*Math.max(0,Math.min(1,(zero-avg)/(zero-full)))*score/set.length);
+  const total=accPt+spdPt;
+  $('rStage').textContent=`STAGE ${SN[stage-1]}　${st.name}`;
+  $('rPt').innerHTML=`${total}<span> / 100点</span>`;
+  $('rBd').innerHTML=`<div>正答点 <b>${accPt}</b> / 70</div><div>スピード点 <b>${spdPt}</b> / 30</div>`;
+  $('rScore').innerHTML=`正解 ${score} / ${set.length}　タイム ${fmtT(time)} 秒（1問平均 ${avg.toFixed(1)} 秒）
+    <div class="note">スピード点：1問平均${full}秒以内で満点、${zero}秒で0点。正解した問題の割合をかけて計算します。</div>`;
+  let rank;
+  if(total>=90)rank='S　完璧＆スピードも最高！';
+  else if(total>=75)rank='A　すばらしい！';
+  else if(total>=55)rank='B　あと少し！';
+  else if(total>=35)rank='C　公式の確認から';
+  else rank='D　まずは解説をじっくり';
+  $('rRank').textContent='ランク '+rank;
+
+  const k=sid(me.c,me.n);DB.rec[k]=DB.rec[k]||{};
+  const old=DB.rec[k][stage],nw={pt:total,score,time:Math.round(time),at:Date.now()};
+  const better=isBetter(nw,old);
+  if(better){DB.rec[k][stage]=nw;store.save(DB)}
+  $('rBest').textContent=better?(old?'★ 自己ベスト更新！提出コードも更新されました':'記録しました。提出コードに反映されています'):`自己ベストは ${old.pt}点`;
+
+  $('rTable').innerHTML=results.map((r,i)=>`<tr><td>${i+1}</td><td>${r.tag}</td>
+    <td class="mk ${r.ok?'o':'x'}">${r.ok?'○':'×'}</td><td class="tm">${fmtT(r.t)} 秒</td></tr>`).join('');
+
+  let h='';
+  const wrongTags=[...new Set(results.filter(r=>!r.ok).map(r=>r.tag))];
+  const slow=results.filter(r=>r.ok).sort((a,b)=>b.t-a.t)[0];
+  if(score===set.length){
+    h+=`<h3>コメント</h3><p>全問正解です！`;
+    if(slow)h+=`いちばん時間がかかったのは「${slow.tag}」（${fmtT(slow.t)} 秒）。ここを速くすればさらにスコアが上がります。`;
+    h+='</p>';
+  }else{
+    h+=`<h3>見直しポイント</h3>`;
+    wrongTags.forEach(t=>h+=`<div class="adv"><b>${t}</b><br>${ADV[t]||''}</div>`);
+    h+=`<p style="font-size:.9rem;color:var(--sub)">${st.hint}</p>`;
+    h+=`<h3>間違えた問題</h3>`;
+    results.forEach((r,i)=>{if(!r.ok)h+=`<details class="review"><summary>第${i+1}問（${r.tag}）</summary>
+      <div class="rq">${r.q}</div><div>正解：<span class="ra">${r.a}</span></div><div class="exp">${r.e}</div></details>`});
+  }
+  $('rFb').innerHTML=h;
+  show('scResult');
+}
+$('retry').onclick=()=>startGame(stage);
+$('toMenu').onclick=()=>{renderMenu();show('scMenu')};
+
+document.addEventListener('keydown',ev=>{
+  if(!$('scGame').classList.contains('on'))return;
+  if(!answered&&'1234'.includes(ev.key)&&ev.key.length===1){const b=$('opts').children[+ev.key-1];b&&b.click()}
+  else if(answered&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();next()}
+});
+
+/* ================================================================
+   先生用：ランキング集計
+   ================================================================ */
+let RK=null,rkTab='total';
+$('toTeacher').onclick=()=>{$('tMsg').textContent='';show('scTeacher')};
+$('tBack').onclick=()=>show('scTitle');
+$('tRun').onclick=()=>{
+  const all={};let ok=0,bad=0;
+  const merge=(c,n,s,rec)=>{
+    if(c<1||c>99||n<1||n>99||rec.pt>100)return false;
+    const k=sid(c,n);all[k]=all[k]||{c,n,st:{}};
+    if(isBetter(rec,all[k].st[s]))all[k].st[s]=rec;return true;
+  };
+  const re=/(\d{1,2})-(\d{1,2})((?:_[1-4]:\d{1,3}:\d{1,5})+)_([0-9a-z]{4})/gi;
+  const txt=$('tInput').value;let m;
+  while((m=re.exec(txt))){
+    const body=`${+m[1]}-${+m[2]}${m[3]}`;
+    if(hash(body)!==m[4].toLowerCase()){bad++;continue}
+    ok++;
+    for(const p of m[3].split('_').slice(1)){const[s,pt,sec]=p.split(':').map(Number);merge(+m[1],+m[2],s,{pt,time:sec*1000})}
+  }
+  let local=0;
+  if($('tLocal').checked){
+    for(const k in DB.rec){const[c,n]=k.split('-').map(Number);for(const s in DB.rec[k]){merge(c,n,+s,DB.rec[k][s]);}local++}
+  }
+  RK=Object.values(all);
+  const msg=[];
+  msg.push(`読み取ったコード：${ok}件`);
+  if($('tLocal').checked)msg.push(`この端末の記録：${local}人分`);
+  if(bad)msg.push(`<span style="color:var(--ng)">チェック不一致（改変・入力ミスの可能性）：${bad}件 → 集計から除外</span>`);
+  $('tMsg').innerHTML=msg.join('　/　');
+  if(!RK.length){$('tResult').style.display='none';$('tMsg').innerHTML+='<br><span style="color:var(--ng)">集計できる記録がありません。</span>';return}
+  const classes=[...new Set(RK.map(r=>r.c))].sort((a,b)=>a-b);
+  $('tClass').innerHTML=`<option value="0">全体</option>`+classes.map(c=>`<option value="${c}">${c}組</option>`).join('');
+  $('tTabs').innerHTML=[['total','総合（400点）'],['1','① 三角比の値'],['2','② 相互関係'],['3','③ 角度'],['4','④ 正弦・余弦定理']]
+    .map(([k,l])=>`<button data-k="${k}" class="${k===rkTab?'on':''}">${l}</button>`).join('');
+  $('tTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{rkTab=b.dataset.k;$('tTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderRank()});
+  $('tResult').style.display='block';renderRank();
+};
+$('tClass').onchange=$('tTop').onchange=()=>renderRank();
+let rkRows=[];
+function renderRank(){
+  const cf=+$('tClass').value,top=+$('tTop').value;
+  let rows=RK.filter(r=>!cf||r.c===cf).map(r=>{
+    if(rkTab==='total'){
+      const ss=SIDS.map(s=>r.st[s]);
+      return{c:r.c,n:r.n,pt:ss.reduce((a,x)=>a+(x?x.pt:0),0),time:ss.reduce((a,x)=>a+(x?x.time:0),0),done:ss.filter(Boolean).length,ss};
+    }
+    const x=r.st[rkTab];return x?{c:r.c,n:r.n,pt:x.pt,time:x.time}:null;
+  }).filter(Boolean);
+  rows.sort((a,b)=>b.pt-a.pt||a.time-b.time);
+  let rank=0,prev=null;
+  rows.forEach((r,i)=>{if(!prev||r.pt!==prev.pt||r.time!==prev.time)rank=i+1;r.rank=rank;prev=r});
+  rkRows=rows;
+  rows=rows.filter(r=>r.rank<=top);
+  const isT=rkTab==='total';
+  $('tHead').innerHTML=`<tr><th>順位</th><th>組</th><th>番号</th>${isT?'<th>①</th><th>②</th><th>③</th><th>④</th>':''}<th class="tm">${isT?'合計点':'点数'}</th><th class="tm">${isT?'合計タイム':'タイム'}</th></tr>`;
+  $('tBody').innerHTML=rows.map(r=>`<tr class="${r.rank<=3?'top'+r.rank:''}"><td class="medal">${r.rank}</td><td>${r.c}組</td><td>${r.n}番</td>
+    ${isT?r.ss.map(x=>`<td>${x?x.pt:'−'}</td>`).join(''):''}
+    <td class="tm"><b>${r.pt}</b></td><td class="tm">${mmss(r.time/1000)}</td></tr>`).join('')||`<tr><td colspan="9">記録がありません</td></tr>`;
+}
+$('tCopy').onclick=async()=>{
+  const isT=rkTab==='total';
+  const head=['順位','組','番号',...(isT?['①','②','③','④']:[]),isT?'合計点':'点数','タイム(秒)'];
+  const lines=[head.join('\t'),...rkRows.map(r=>[r.rank,r.c,r.n,...(isT?r.ss.map(x=>x?x.pt:''):[]),r.pt,Math.round(r.time/1000)].join('\t'))];
+  try{await navigator.clipboard.writeText(lines.join('\n'));$('tMsg').textContent='表をコピーしました（全員分）。スプレッドシートに貼り付けできます。'}
+  catch(e){$('tMsg').textContent='コピーできませんでした。ブラウザの設定を確認してください。'}
+};
+$('tClear').onclick=()=>{
+  if(!confirm('この端末に保存されている全員分の記録を消去します。元に戻せません。よろしいですか？'))return;
+  DB={rec:{}};store.save(DB);me=null;$('selC').value='';$('selN').value='';chkLogin();
+  $('tMsg').textContent='この端末の記録を消去しました。';$('tResult').style.display='none';
+};
+</script>
+</body>
+</html>
